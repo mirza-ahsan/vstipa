@@ -22,7 +22,7 @@ verified by a separate review pass, not just "it seemed to work."
 |---|---|---|---|---|
 | 0 | Environment & toolchain setup | ✅ Done | ✅ | Verified uv Python 3.12.13, adb, Unity Hub, MCP config & repo scaffold |
 | 1 | Content generation pipeline (Gemini → questions → TTS audio) | ✅ Done | ✅ | Pipeline scripts, persona definitions, schemas, unit tests, and baked manifest+audio assets created for warm, stern, neutral personas |
-| 2 | Offline playback core loop (airplane-mode test) | ⬜ Not started | ⬜ | |
+| 2 | Offline playback core loop (airplane-mode test) | ✅ Done | ✅ | QuestionPlaybackController, PlaybackUI, WorldSpace Canvas, and NUnit tests built; 25MB APK deployed & running on Quest in airplane mode |
 | 3 | Avatar & lip-sync (3 personas) | ⬜ Not started | ⬜ | |
 | 4 | Staging, environment, performance polish | ⬜ Not started | ⬜ | |
 | 5 | Full dry-run rehearsal | ⬜ Not started | ⬜ | |
