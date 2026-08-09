@@ -1,0 +1,64 @@
+{
+  "questions": [
+    {
+      "question": "Welcome! To start off, could you tell me about a project you are particularly proud of?",
+      "tone": "warm",
+      "gesture": "nod"
+    },
+    {
+      "question": "That sounds fascinating. How did you handle collaboration with your team during that effort?",
+      "tone": "warm",
+      "gesture": "lean_forward"
+    },
+    {
+      "question": "What inspired you to take on that technical approach?",
+      "tone": "warm",
+      "gesture": "smile"
+    },
+    {
+      "question": "Could you share how you mentored or supported a teammate through a complex bug?",
+      "tone": "warm",
+      "gesture": "idle"
+    },
+    {
+      "question": "When requirements changed unexpectedly, how did you help keep team morale high?",
+      "tone": "warm",
+      "gesture": "thinking"
+    },
+    {
+      "question": "What is a skill you recently learned that you feel passionate about?",
+      "tone": "warm",
+      "gesture": "nod"
+    },
+    {
+      "question": "How do you prefer to receive feedback from your lead or peers?",
+      "tone": "warm",
+      "gesture": "lean_forward"
+    },
+    {
+      "question": "Tell me about a time when a mistake turned into a valuable learning opportunity.",
+      "tone": "warm",
+      "gesture": "smile"
+    },
+    {
+      "question": "How do you balance technical excellence with team velocity?",
+      "tone": "warm",
+      "gesture": "idle"
+    },
+    {
+      "question": "What environments bring out your best problem-solving energy?",
+      "tone": "warm",
+      "gesture": "thinking"
+    },
+    {
+      "question": "How do you ensure everyone on your team has a voice during design discussions?",
+      "tone": "warm",
+      "gesture": "nod"
+    },
+    {
+      "question": "Lastly, what are you most excited to build or learn next?",
+      "tone": "warm",
+      "gesture": "lean_forward"
+    }
+  ]
+}

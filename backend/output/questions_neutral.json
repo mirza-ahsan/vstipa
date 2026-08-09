@@ -1,0 +1,64 @@
+{
+  "questions": [
+    {
+      "question": "Please walk me through your background and key technical areas of expertise.",
+      "tone": "neutral",
+      "gesture": "nod"
+    },
+    {
+      "question": "Describe your experience with distributed systems and microservices architecture.",
+      "tone": "neutral",
+      "gesture": "idle"
+    },
+    {
+      "question": "How do you approach writing clean, maintainable, and well-tested code?",
+      "tone": "neutral",
+      "gesture": "thinking"
+    },
+    {
+      "question": "Explain a complex data structure or algorithm you implemented recently.",
+      "tone": "neutral",
+      "gesture": "lean_forward"
+    },
+    {
+      "question": "What process do you follow for code reviews and architectural RFCs?",
+      "tone": "neutral",
+      "gesture": "nod"
+    },
+    {
+      "question": "How do you monitor and instrument services running in production environments?",
+      "tone": "neutral",
+      "gesture": "idle"
+    },
+    {
+      "question": "Describe your experience working with cross-functional product and design teams.",
+      "tone": "neutral",
+      "gesture": "thinking"
+    },
+    {
+      "question": "How do you evaluate and integrate third-party libraries into an existing codebase?",
+      "tone": "neutral",
+      "gesture": "lean_forward"
+    },
+    {
+      "question": "What strategies do you use for database schema migrations with zero downtime?",
+      "tone": "neutral",
+      "gesture": "nod"
+    },
+    {
+      "question": "Tell me about a time you had to pick up an unfamiliar technology stack quickly.",
+      "tone": "neutral",
+      "gesture": "idle"
+    },
+    {
+      "question": "How do you prioritize tech debt alongside new feature development?",
+      "tone": "neutral",
+      "gesture": "thinking"
+    },
+    {
+      "question": "Do you have any questions for me regarding our engineering team or architecture?",
+      "tone": "neutral",
+      "gesture": "lean_forward"
+    }
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "questions": [
+    {
+      "question": "We have strict performance constraints. Describe a production incident you directly caused or resolved.",
+      "tone": "stern",
+      "gesture": "arms_crossed"
+    },
+    {
+      "question": "Why did you choose that specific architecture over simpler alternatives?",
+      "tone": "stern",
+      "gesture": "lean_back"
+    },
+    {
+      "question": "How do you defend your technical decisions when senior engineers strongly disagree?",
+      "tone": "stern",
+      "gesture": "nod_firm"
+    },
+    {
+      "question": "Describe a scenario where you had to ship under tight deadline pressure with incomplete specs.",
+      "tone": "stern",
+      "gesture": "idle"
+    },
+    {
+      "question": "What is the single biggest architectural mistake you have made in your career?",
+      "tone": "stern",
+      "gesture": "thinking"
+    },
+    {
+      "question": "How do you handle working with team members who fail to meet performance expectations?",
+      "tone": "stern",
+      "gesture": "arms_crossed"
+    },
+    {
+      "question": "Walk me through how you optimize memory allocations in critical paths.",
+      "tone": "stern",
+      "gesture": "lean_back"
+    },
+    {
+      "question": "If your service experiences a 10x traffic spike right now, where will it fail first?",
+      "tone": "stern",
+      "gesture": "nod_firm"
+    },
+    {
+      "question": "When forced to cut scope to meet a release target, what criteria do you prioritize?",
+      "tone": "stern",
+      "gesture": "idle"
+    },
+    {
+      "question": "Explain how you debug non-deterministic race conditions under heavy load.",
+      "tone": "stern",
+      "gesture": "thinking"
+    },
+    {
+      "question": "Why should we trust your technical judgment on high-availability system designs?",
+      "tone": "stern",
+      "gesture": "arms_crossed"
+    },
+    {
+      "question": "What trade-offs did you make in your last project that you now regret?",
+      "tone": "stern",
+      "gesture": "lean_back"
+    }
+  ]
+}
