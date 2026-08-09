@@ -29,6 +29,10 @@ public class QuestionPlaybackController : MonoBehaviour
             }
         }
 
+        audioSource.playOnAwake = false;
+        audioSource.loop = false;
+        audioSource.volume = 1.0f;
+
         LoadManifest(selectedPersona);
     }
 
@@ -45,31 +49,16 @@ public class QuestionPlaybackController : MonoBehaviour
     {
         string jsonText = "";
 
-        if (path.Contains("://") || path.Contains(":///"))
+        using (UnityWebRequest www = UnityWebRequest.Get(path))
         {
-            using (UnityWebRequest www = UnityWebRequest.Get(path))
+            yield return www.SendWebRequest();
+            if (www.result == UnityWebRequest.Result.Success)
             {
-                yield return www.SendWebRequest();
-                if (www.result == UnityWebRequest.Result.Success)
-                {
-                    jsonText = www.downloadHandler.text;
-                }
-                else
-                {
-                    Debug.LogError($"[QuestionPlaybackController] Error loading manifest from {path}: {www.error}");
-                    yield break;
-                }
-            }
-        }
-        else
-        {
-            if (File.Exists(path))
-            {
-                jsonText = File.ReadAllText(path);
+                jsonText = www.downloadHandler.text;
             }
             else
             {
-                Debug.LogError($"[QuestionPlaybackController] Manifest file not found at: {path}");
+                Debug.LogError($"[QuestionPlaybackController] Error loading manifest from {path}: {www.error}");
                 yield break;
             }
         }
@@ -107,23 +96,25 @@ public class QuestionPlaybackController : MonoBehaviour
 
         string audioPath = Path.Combine(Application.streamingAssetsPath, "questions", selectedPersona, item.audio_file);
 
-        if (!audioPath.Contains("://"))
-        {
-            audioPath = "file://" + audioPath;
-        }
-
-        AudioType audioType = item.audio_file.EndsWith(".wav", StringComparison.OrdinalIgnoreCase) ? AudioType.WAV : AudioType.MPEG;
-
-        using (UnityWebRequest www = UnityWebRequestMultimedia.GetAudioClip(audioPath, audioType))
+        using (UnityWebRequest www = UnityWebRequest.Get(audioPath))
         {
             yield return www.SendWebRequest();
 
             if (www.result == UnityWebRequest.Result.Success)
             {
-                AudioClip clip = DownloadHandlerAudioClip.GetContent(www);
-                audioSource.clip = clip;
-                audioSource.Play();
-                Debug.Log($"[QuestionPlaybackController] Playing Q{item.id:02d}: '{item.question}'");
+                byte[] bytes = www.downloadHandler.data;
+                AudioClip clip = WavUtility.ToAudioClip(bytes, $"Q{item.id:02d}");
+
+                if (clip != null)
+                {
+                    audioSource.clip = clip;
+                    audioSource.Play();
+                    Debug.Log($"[QuestionPlaybackController] Playing Q{item.id:02d}: '{item.question}' ({clip.samples} samples, {clip.frequency} Hz)");
+                }
+                else
+                {
+                    Debug.LogError($"[QuestionPlaybackController] Failed to parse WAV clip Q{item.id:02d}");
+                }
             }
             else
             {
