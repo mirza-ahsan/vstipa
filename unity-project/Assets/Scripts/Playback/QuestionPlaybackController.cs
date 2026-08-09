@@ -105,9 +105,11 @@ public class QuestionPlaybackController : MonoBehaviour
         audioSource.Stop();
 
         string audioUrl = GetStreamingAssetsUrl($"questions/{selectedPersona}/{item.audio_file}");
-        Debug.Log($"[QuestionPlaybackController] Loading audio clip from URL: {audioUrl}");
+        Debug.Log($"[QuestionPlaybackController] Loading spoken voice audio clip from URL: {audioUrl}");
 
-        using (UnityWebRequest www = UnityWebRequestMultimedia.GetAudioClip(audioUrl, AudioType.WAV))
+        AudioType audioType = item.audio_file.EndsWith(".mp3") ? AudioType.MPEG : AudioType.WAV;
+
+        using (UnityWebRequest www = UnityWebRequestMultimedia.GetAudioClip(audioUrl, audioType))
         {
             yield return www.SendWebRequest();
 
@@ -119,24 +121,11 @@ public class QuestionPlaybackController : MonoBehaviour
                     audioSource.clip = clip;
                     audioSource.volume = 1.0f;
                     audioSource.Play();
-                    Debug.Log($"[QuestionPlaybackController] PLAYING Q{item.id:02d} SUCCESS: '{item.question}' ({clip.length:F2}s, {clip.frequency} Hz)");
+                    Debug.Log($"[QuestionPlaybackController] PLAYING SPOKEN VOICE Q{item.id:02d} SUCCESS: '{item.question}' ({clip.length:F2}s, {clip.frequency} Hz)");
                 }
                 else
                 {
-                    Debug.LogWarning($"[QuestionPlaybackController] GetContent returned empty clip for {audioUrl}, attempting WavUtility fallback...");
-                    byte[] bytes = www.downloadHandler.data;
-                    AudioClip fallbackClip = WavUtility.ToAudioClip(bytes, $"Q{item.id:02d}");
-                    if (fallbackClip != null)
-                    {
-                        audioSource.clip = fallbackClip;
-                        audioSource.volume = 1.0f;
-                        audioSource.Play();
-                        Debug.Log($"[QuestionPlaybackController] PLAYING Q{item.id:02d} FALLBACK SUCCESS: '{item.question}' ({fallbackClip.length:F2}s)");
-                    }
-                    else
-                    {
-                        Debug.LogError($"[QuestionPlaybackController] Both FMOD and WavUtility failed for {audioUrl}");
-                    }
+                    Debug.LogError($"[QuestionPlaybackController] GetContent returned empty clip for {audioUrl}");
                 }
             }
             else

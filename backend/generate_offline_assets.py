@@ -1,8 +1,6 @@
 import json
-import math
-import struct
-import wave
 from pathlib import Path
+from gtts import gTTS
 
 PERSONAS = {
     "warm": {
@@ -64,20 +62,6 @@ PERSONAS = {
     }
 }
 
-def generate_tone_wav(output_path: Path, duration_sec: float = 2.5, freq: float = 440.0):
-    sample_rate = 22050
-    num_samples = int(sample_rate * duration_sec)
-
-    with wave.open(str(output_path), "w") as wav_file:
-        wav_file.setnchannels(1)
-        wav_file.setsampwidth(2)
-        wav_file.setframerate(sample_rate)
-
-        for i in range(num_samples):
-            t = float(i) / sample_rate
-            sample = int(32767.0 * 0.3 * math.sin(2.0 * math.pi * freq * t))
-            wav_file.writeframesraw(struct.pack("<h", sample))
-
 def generate_baked_content():
     backend_dir = Path(__file__).parent
     output_dir = backend_dir / "output"
@@ -96,7 +80,7 @@ def generate_baked_content():
 
         for idx, q_text in enumerate(pdata["questions"], start=1):
             gesture = gestures[(idx - 1) % len(gestures)]
-            audio_filename = f"q{idx:02d}.wav"
+            audio_filename = f"q{idx:02d}.mp3"
             audio_path = persona_streaming_dir / audio_filename
 
             q_items.append({
@@ -105,8 +89,9 @@ def generate_baked_content():
                 "gesture": gesture
             })
 
-            freq = 350.0 if persona_id == "warm" else (500.0 if persona_id == "stern" else 440.0)
-            generate_tone_wav(audio_path, duration_sec=2.0 + (idx % 3) * 0.5, freq=freq + idx * 10)
+            print(f"[{persona_id}] Synthesizing spoken voice for Q{idx:02d}...")
+            tts = gTTS(text=q_text, lang='en', slow=False)
+            tts.save(str(audio_path))
 
             manifest_entries.append({
                 "id": idx,
@@ -131,7 +116,7 @@ def generate_baked_content():
         with open(manifest_path, "w", encoding="utf-8") as f:
             json.dump(manifest_data, f, indent=2)
 
-        print(f"Generated offline assets for persona [{persona_id}]: {len(manifest_entries)} questions in {persona_streaming_dir}")
+        print(f"Generated spoken voice assets for persona [{persona_id}]: {len(manifest_entries)} questions in {persona_streaming_dir}")
 
 if __name__ == "__main__":
     generate_baked_content()
