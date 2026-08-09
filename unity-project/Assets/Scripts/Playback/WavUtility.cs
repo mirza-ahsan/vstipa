@@ -11,49 +11,50 @@ public static class WavUtility
             return null;
         }
 
-        // Parse RIFF header
+        string riff = System.Text.Encoding.ASCII.GetString(wavFileBytes, 0, 4);
+        string wave = System.Text.Encoding.ASCII.GetString(wavFileBytes, 8, 4);
+
+        if (riff != "RIFF" || wave != "WAVE")
+        {
+            Debug.LogError($"[WavUtility] Not a valid WAV file: riff={riff}, wave={wave}");
+            return null;
+        }
+
         int channels = BitConverter.ToInt16(wavFileBytes, 22);
         int frequency = BitConverter.ToInt32(wavFileBytes, 24);
         int bitsPerSample = BitConverter.ToInt16(wavFileBytes, 34);
 
-        // Find "data" subchunk
         int pos = 12;
-        while (pos < wavFileBytes.Length - 8)
+        while (pos <= wavFileBytes.Length - 8)
         {
             string chunkId = System.Text.Encoding.ASCII.GetString(wavFileBytes, pos, 4);
             int chunkSize = BitConverter.ToInt32(wavFileBytes, pos + 4);
+            pos += 8;
+
             if (chunkId == "data")
             {
-                pos += 8;
-                int sampleCount = chunkSize / (bitsPerSample / 8);
-                float[] samples = new float[sampleCount];
+                int totalSamples = chunkSize / (bitsPerSample / 8);
+                float[] samples = new float[totalSamples];
 
                 if (bitsPerSample == 16)
                 {
                     int sampleIndex = 0;
-                    for (int i = pos; i < pos + chunkSize && i < wavFileBytes.Length - 1; i += 2)
+                    for (int i = pos; i < pos + chunkSize && i < wavFileBytes.Length - 1 && sampleIndex < totalSamples; i += 2)
                     {
-                        short sample = BitConverter.ToInt16(wavFileBytes, i);
-                        samples[sampleIndex++] = sample / 32768f;
-                    }
-                }
-                else if (bitsPerSample == 8)
-                {
-                    int sampleIndex = 0;
-                    for (int i = pos; i < pos + chunkSize && i < wavFileBytes.Length; i++)
-                    {
-                        samples[sampleIndex++] = (wavFileBytes[i] - 128) / 128f;
+                        short sample16 = BitConverter.ToInt16(wavFileBytes, i);
+                        samples[sampleIndex++] = sample16 / 32768.0f;
                     }
                 }
 
-                AudioClip audioClip = AudioClip.Create(clipName, samples.Length / channels, channels, frequency, false);
+                AudioClip audioClip = AudioClip.Create(clipName, totalSamples / channels, channels, frequency, false);
                 audioClip.SetData(samples, 0);
                 return audioClip;
             }
-            pos += 8 + chunkSize;
+
+            pos += (chunkSize + 1) & ~1;
         }
 
-        Debug.LogError("[WavUtility] 'data' chunk not found in WAV header.");
+        Debug.LogError("[WavUtility] 'data' chunk not found in WAV file.");
         return null;
     }
 }
