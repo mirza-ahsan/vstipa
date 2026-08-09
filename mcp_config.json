@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/home/aztrek/Projects/vstipa"
+      ]
+    },
+    "unity": {
+      "url": "http://127.0.0.1:8080/mcp"
+    }
+  }
+}

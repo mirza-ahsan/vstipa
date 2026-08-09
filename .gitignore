@@ -104,3 +104,12 @@ InitTestScene*.unity*
 
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
+
+# Project specific ignores
+masterprompt.md
+.env
+*.env
+.venv/
+__pycache__/
+.pytest_cache/
+
