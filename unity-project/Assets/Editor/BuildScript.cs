@@ -26,13 +26,53 @@ public static class BuildScript
             }
         }
 
-        // 2. Generate and Instantiate Meta Horizon Style 3D Humanoid Avatar (Beanie, Grey Blazer, White Shirt, Trousers)
-        GameObject avatarRoot = AvatarMeshGenerator.CreateMetaStyleAvatar("WarmAvatar", new Color(0.45f, 0.48f, 0.52f), new Color(0.96f, 0.96f, 0.96f), new Color(0.85f, 0.68f, 0.58f), new Color(0.18f, 0.18f, 0.20f));
-        avatarRoot.transform.position = new Vector3(-0.40f, 0f, 1.80f); // Standing at eye level 1.8m in front
-        avatarRoot.transform.rotation = Quaternion.Euler(0, 165.0f, 0); // Facing user
+        // 2. Instantiate Imported GLB Avatars (Male & Female)
+        GameObject malePrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Avatars/male_avatar.glb");
+        GameObject femalePrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Avatars/female_avatar.glb");
 
-        AvatarGestureController gestureCtrl = avatarRoot.GetComponent<AvatarGestureController>();
-        AvatarLipSync lipSync = avatarRoot.GetComponent<AvatarLipSync>();
+        GameObject maleAvatarInstance = null;
+        if (malePrefab != null)
+        {
+            maleAvatarInstance = (GameObject)PrefabUtility.InstantiatePrefab(malePrefab);
+        }
+        else
+        {
+            maleAvatarInstance = new GameObject("MaleAvatar");
+        }
+
+        maleAvatarInstance.name = "MaleAvatar";
+        maleAvatarInstance.transform.position = new Vector3(-0.40f, 0f, 1.80f);
+        maleAvatarInstance.transform.rotation = Quaternion.Euler(0, 165.0f, 0);
+        maleAvatarInstance.transform.localScale = Vector3.one;
+
+        AvatarGestureController maleGestureCtrl = maleAvatarInstance.GetComponent<AvatarGestureController>();
+        if (maleGestureCtrl == null) maleGestureCtrl = maleAvatarInstance.AddComponent<AvatarGestureController>();
+
+        AvatarLipSync maleLipSync = maleAvatarInstance.GetComponent<AvatarLipSync>();
+        if (maleLipSync == null) maleLipSync = maleAvatarInstance.AddComponent<AvatarLipSync>();
+
+
+        GameObject femaleAvatarInstance = null;
+        if (femalePrefab != null)
+        {
+            femaleAvatarInstance = (GameObject)PrefabUtility.InstantiatePrefab(femalePrefab);
+        }
+        else
+        {
+            femaleAvatarInstance = new GameObject("FemaleAvatar");
+        }
+
+        femaleAvatarInstance.name = "FemaleAvatar";
+        femaleAvatarInstance.transform.position = new Vector3(-0.40f, 0f, 1.80f);
+        femaleAvatarInstance.transform.rotation = Quaternion.Euler(0, 165.0f, 0);
+        femaleAvatarInstance.transform.localScale = Vector3.one;
+        femaleAvatarInstance.SetActive(false); // Default active avatar is Male for Warm persona
+
+        AvatarGestureController femaleGestureCtrl = femaleAvatarInstance.GetComponent<AvatarGestureController>();
+        if (femaleGestureCtrl == null) femaleGestureCtrl = femaleAvatarInstance.AddComponent<AvatarGestureController>();
+
+        AvatarLipSync femaleLipSync = femaleAvatarInstance.GetComponent<AvatarLipSync>();
+        if (femaleLipSync == null) femaleLipSync = femaleAvatarInstance.AddComponent<AvatarLipSync>();
 
         // 3. Create PlaybackController
         GameObject playbackGo = new GameObject("PlaybackController");
@@ -42,9 +82,10 @@ public static class BuildScript
         audioSource.spatialBlend = 0f; // Crisp 2D UI stereo sound
         controller.audioSource = audioSource;
 
-        controller.activeAvatarGestureController = gestureCtrl;
-        controller.activeAvatarLipSync = lipSync;
-        if (lipSync != null) lipSync.audioSource = audioSource;
+        controller.activeAvatarGestureController = maleGestureCtrl;
+        controller.activeAvatarLipSync = maleLipSync;
+        if (maleLipSync != null) maleLipSync.audioSource = audioSource;
+        if (femaleLipSync != null) femaleLipSync.audioSource = audioSource;
 
         // 4. Create EventSystem
         GameObject eventSystemGo = new GameObject("EventSystem");
@@ -133,7 +174,7 @@ public static class BuildScript
         statusText.fontSize = 26;
         statusText.alignment = TextAnchor.MiddleCenter;
         statusText.color = Color.lightGray;
-        statusText.text = "Phase 3: Meta Horizon-Style 3D Avatar Active";
+        statusText.text = "Phase 3: 3D Humanoid Interviewer Avatar Active";
         statusText.horizontalOverflow = HorizontalWrapMode.Wrap;
         statusText.verticalOverflow = VerticalWrapMode.Overflow;
         RectTransform statusRt = statusTextGo.GetComponent<RectTransform>();
@@ -175,7 +216,7 @@ public static class BuildScript
         string scenePath = "Assets/Scenes/MainScene.unity";
         System.IO.Directory.CreateDirectory("Assets/Scenes");
         UnityEditor.SceneManagement.EditorSceneManager.SaveScene(scene, scenePath);
-        Debug.Log("[BuildScript] Phase 3 MainScene.unity with Meta Horizon Style 3D Humanoid Avatar configured and saved.");
+        Debug.Log("[BuildScript] Phase 3 MainScene.unity with Male & Female 3D Humanoid Avatars saved.");
     }
 
     public static void BuildAndroid()
