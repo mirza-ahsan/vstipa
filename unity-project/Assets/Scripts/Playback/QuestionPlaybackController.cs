@@ -8,6 +8,7 @@ public class QuestionPlaybackController : MonoBehaviour
     [Header("Configuration")]
     public string selectedPersona = "warm";
     public AudioSource audioSource;
+    public float audioGainMultiplier = 3.5f;
 
     [Header("Avatar Components")]
     public AvatarGestureController activeAvatarGestureController;
@@ -173,12 +174,13 @@ public class QuestionPlaybackController : MonoBehaviour
                 AudioClip clip = DownloadHandlerAudioClip.GetContent(www);
                 if (clip != null && clip.length > 0)
                 {
+                    AmplifyAudioClip(clip, audioGainMultiplier);
                     AudioListener.pause = false;
                     AudioListener.volume = 1.0f;
                     audioSource.clip = clip;
                     audioSource.volume = 1.0f;
                     audioSource.Play();
-                    Debug.Log($"[QuestionPlaybackController] PLAYING SPOKEN VOICE Q{item.id:02d} SUCCESS: '{item.question}' ({clip.length:F2}s, {clip.frequency} Hz)");
+                    Debug.Log($"[QuestionPlaybackController] PLAYING SPOKEN VOICE Q{item.id:02d} SUCCESS (Gain={audioGainMultiplier:F1}x): '{item.question}' ({clip.length:F2}s, {clip.frequency} Hz)");
                 }
                 else
                 {
@@ -192,5 +194,27 @@ public class QuestionPlaybackController : MonoBehaviour
         }
 
         isPlaying = false;
+    }
+
+    private void AmplifyAudioClip(AudioClip clip, float gain)
+    {
+        if (clip == null || gain <= 1.0f) return;
+
+        try
+        {
+            float[] samples = new float[clip.samples * clip.channels];
+            if (clip.GetData(samples, 0))
+            {
+                for (int i = 0; i < samples.Length; i++)
+                {
+                    samples[i] = Mathf.Clamp(samples[i] * gain, -1.0f, 1.0f);
+                }
+                clip.SetData(samples, 0);
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning($"[QuestionPlaybackController] Could not amplify audio clip: {ex.Message}");
+        }
     }
 }
