@@ -1,0 +1,24 @@
+{
+    "name": "com.hecomi.ulipsync",
+    "version": "3.1.5",
+    "displayName": "uLipSync",
+    "description": "A MFCC-based LipSync plugin for Unity using Job and Burst Compiler. V-STIPA embeds the upstream 3.1.5 runtime/editor package without samples and declares its Unity 6 Timeline dependency.",
+    "author": {
+        "name": "hecomi",
+        "url": "https://tips.hecomi.com"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/hecomi/uLipSync"
+    },
+    "dependencies": {
+        "com.unity.burst": "1.4.11",
+        "com.unity.mathematics": "1.2.5",
+        "com.unity.timeline": "1.8.12"
+    },
+    "keywords": [
+        "unity",
+        "lipsync"
+    ],
+    "license": "MIT License"
+}

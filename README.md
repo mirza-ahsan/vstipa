@@ -1,11 +1,11 @@
 # V-STIPA — Virtual Synthetic Trainer for Interview Performance & Analysis
 
 **V-STIPA** (Virtual Synthetic Trainer for Interview Performance & Analysis) is a VR
-training-simulation demo built for a single 3–4 minute live presentation. A user
-puts on a Meta Quest headset, faces a virtual interviewer avatar, and presses a button
-to advance through a set of AI-generated interview questions — delivered with
-real-time lip-sync and gestures. The on-stage build runs **fully offline**; all
-question content and voice audio are AI-generated ahead of time and baked into the app.
+training-simulation demo built for a recorded submission. A user faces a virtual
+interviewer avatar and presses a button to advance through a set of AI-generated
+interview questions — delivered with lip-sync and gestures. The reliable Track 1
+fallback keeps all question content and PCM voice audio baked into the app; offline
+operation is useful but is no longer a submission requirement.
 
 > Scope note: this is a demo build, not a production/multi-user app. Live conversation
 > memory, microphone capture, and answer processing are intentionally out of scope.
@@ -23,15 +23,17 @@ verified by a separate review pass, not just "it seemed to work."
 | 0 | Environment & toolchain setup | ✅ Done | ✅ | Verified uv Python 3.12.13, adb, Unity Hub, MCP config & repo scaffold |
 | 1 | Content generation pipeline (Gemini → questions → TTS audio) | ✅ Done | ✅ | Pipeline scripts, persona definitions, schemas, unit tests, and baked manifest+audio assets created for warm, stern, neutral personas |
 | 2 | Offline playback core loop (airplane-mode test) | ✅ Done | ✅ | QuestionPlaybackController, PlaybackUI, WorldSpace Canvas, and NUnit tests built; 25MB APK deployed & running on Quest in airplane mode |
-| 3 | Avatar & lip-sync (3 personas) | ✅ Done | ✅ | Meta Horizon-style 3D avatar with grey blazer outfit, beanie, facial viseme blendshapes (viseme_aa/E/O/U/smile), gesture animator, and real-time FFT lip-sync deployed & verified on Quest |
-| 4 | Staging, environment, performance polish | ⬜ Not started | ⬜ | |
-| 5 | Full dry-run rehearsal | ⬜ Not started | ⬜ | |
+| 3 | Avatar & lip-sync (3 personas) | 🟨 In progress | ⬜ | Verified T1 Avaturn body, native idle/procedural gestures, uLipSync MFCC input, and a static-face mouth proxy run in WebGL. Only one avatar source is available and it has no facial morphs; three distinct facial-rig exports and real-viseme wiring remain |
+| 4 | Staging, environment, performance polish | 🟨 In progress | ⬜ | Interview room, persona-selection UI, question HUD, completion/restart flow, and persona accents are built and browser-tested; Quest performance validation remains hardware-blocked |
+| 5 | Full dry-run rehearsal | 🟨 In progress | ⬜ | Automated local WebGL flow reaches completion and switches personas; three human-paced recorded rehearsals and final submission recording remain |
 | 6 | *(Optional)* Live-mode stretch feature | ⬜ Not started | ⬜ | Only attempt if Phase 5 is solid with time to spare |
 
 **Status legend:** ⬜ Not started · 🟨 In progress · ✅ Done · ⚠️ Blocked
 
-**What's left right now:** everything — this tracker should be updated as each phase
-closes. Once Phase 5 is ✅, the app is demo-ready; Phase 6 is a bonus, not a requirement.
+**What's left right now:** supply three suitable facial-rig avatar exports, complete an
+independent Phase 3 review, run Quest checks only if headset footage is required, and
+record three clean human-paced rehearsals plus the final submission. Phase 6 remains a
+bonus, not a requirement.
 
 ---
 
@@ -123,25 +125,33 @@ the full setup steps.
 ```bash
 cd backend
 uv run generate_questions.py     # calls Gemini, writes questions_<persona>.json
-uv run render_audio.py           # calls Cloud TTS, writes audio + manifest
+uv run render_audio.py           # calls Cloud TTS, writes PCM WAV + manifest
 ```
 Copy the output into `unity-project/Assets/StreamingAssets/questions/` if the script
 doesn't already write there directly.
 
+`generate_offline_assets.py` also needs `ffmpeg` on `PATH` to convert gTTS output to
+24 kHz mono PCM WAV files that WebGL and uLipSync can sample reliably.
+
 ### 8. Build & deploy
-Standard Unity Android build targeting the connected Quest (File → Build Settings →
-Android → Build and Run), or `adb install -r <path-to-apk>` for an existing build.
+For the recorded browser fallback, use **V-STIPA → Build WebGL** in Unity, then serve
+`local-build/webgl/` from the repository root:
+
+```bash
+python -m http.server 8000 --directory local-build/webgl
+```
+
+Open <http://127.0.0.1:8000/>. For an optional connected-Quest build, use
+**V-STIPA → Build Android** and `adb install -r build.apk`.
 
 ---
 
 ## Verifying the Demo Is Actually Reliable
 
-Before trusting this on stage, run the Phase 2 gate check yourself: **put the headset
-in airplane mode** and go through the full question sequence for at least one persona,
-start to finish. If it works with the radio off, it will work in a room full of
-other people's Wi-Fi and Bluetooth traffic. Do this again as part of Phase 5's dry-run
-rehearsal, on battery power, timed with a stopwatch, at least three times in a row
-without a glitch, before considering the build demo-ready.
+Before recording the final submission, go through the full question sequence for each
+persona and record at least three human-paced rehearsals. The baked Track 1 path should
+remain the recovery baseline. If Quest footage is required, repeat the checks on the
+headset, on battery power, and use airplane mode as an optional resilience test.
 
 ---
 

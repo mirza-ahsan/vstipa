@@ -39,7 +39,7 @@ def render_audio_for_persona(persona_id: str, backend_dir: Path):
         tone = item["tone"]
         gesture = item["gesture"]
 
-        audio_filename = f"q{idx:02d}.mp3"
+        audio_filename = f"q{idx:02d}.wav"
         audio_path = streaming_dir / audio_filename
 
         print(f"[{persona_id}] Rendering audio for Q{idx:02d} ({len(q_text)} chars)...")
@@ -49,7 +49,8 @@ def render_audio_for_persona(persona_id: str, backend_dir: Path):
             name=voice_name
         )
         audio_config = texttospeech.AudioConfig(
-            audio_encoding=texttospeech.AudioEncoding.MP3,
+            audio_encoding=texttospeech.AudioEncoding.LINEAR16,
+            sample_rate_hertz=24000,
             speaking_rate=speaking_rate,
             pitch=pitch
         )

@@ -20,23 +20,32 @@ Each phase has strict completion criteria. A phase cannot be marked done in `REA
 
 ## Phase 2 — Offline Playback Core Loop
 - **Verification:**
-  - Quest headset in **airplane mode** (Wi-Fi off).
-  - Unity application reads baked manifest and advances through audio clips on button press.
+  - Unity reads baked manifests and advances through the PCM clips on button press.
+  - The baked path remains a reliable fallback. Airplane-mode verification is useful
+    resilience evidence, but is no longer a recorded-submission requirement.
 
 ## Phase 3 — Avatar & Lip-Sync
 - **Verification:**
-  - 3 Ready Player Me avatars imported with Humanoid rig.
-  - uLipSync drives lip movement in sync with audio.
-  - Mixamo gesture triggers accurately according to question metadata.
+  - 3 distinct Avaturn GLB exports are imported with valid Humanoid mappings.
+  - uLipSync drives actual facial blendshapes in sync with readable PCM audio.
+  - Retargeted gesture clips trigger accurately according to question metadata.
+  - The warm, stern, and neutral personas each pass a full local flow.
+  - A separate review pass verifies the gate. A static-face mouth proxy is acceptable
+    for the Track 1 fallback, but does not satisfy the final real-viseme criterion.
 
 ## Phase 4 — Staging, Polish, Performance
 - **Verification:**
-  - Environment staging complete.
-  - Sustained target frame rate on Quest headset (verified via OVR Metrics Tool).
+  - Interview-room staging, persona selection, question HUD, and intentional start/end
+    states are complete.
+  - A clean WebGL rebuild passes the full browser interaction flow without runtime errors.
+  - Sustained frame rate is measured on the actual recording target. Quest/OVR Metrics
+    verification is required only if headset footage is used.
 
 ## Phase 5 — Full Dry-Run Rehearsal
 - **Verification:**
-  - 3 consecutive clean runs of the full 3–4 minute demo on battery power in airplane mode.
+  - 3 consecutive human-paced 3–4 minute recorded rehearsals complete without a flow break.
+  - Audio, avatar motion, readable UI, and capture quality are reviewed in each recording.
+  - The final recorded submission is captured and checked end-to-end.
 
 ## Phase 6 — Live-Mode Stretch Feature (Optional)
 - **Verification:**

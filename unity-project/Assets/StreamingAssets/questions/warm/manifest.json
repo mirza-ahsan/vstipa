@@ -8,84 +8,84 @@
       "question": "Welcome! To start off, could you tell me about a project you are particularly proud of?",
       "tone": "warm",
       "gesture": "nod",
-      "audio_file": "q01.mp3"
+      "audio_file": "q01.wav"
     },
     {
       "id": 2,
       "question": "That sounds fascinating. How did you handle collaboration with your team during that effort?",
       "tone": "warm",
       "gesture": "lean_forward",
-      "audio_file": "q02.mp3"
+      "audio_file": "q02.wav"
     },
     {
       "id": 3,
       "question": "What inspired you to take on that technical approach?",
       "tone": "warm",
       "gesture": "smile",
-      "audio_file": "q03.mp3"
+      "audio_file": "q03.wav"
     },
     {
       "id": 4,
       "question": "Could you share how you mentored or supported a teammate through a complex bug?",
       "tone": "warm",
       "gesture": "idle",
-      "audio_file": "q04.mp3"
+      "audio_file": "q04.wav"
     },
     {
       "id": 5,
       "question": "When requirements changed unexpectedly, how did you help keep team morale high?",
       "tone": "warm",
       "gesture": "thinking",
-      "audio_file": "q05.mp3"
+      "audio_file": "q05.wav"
     },
     {
       "id": 6,
       "question": "What is a skill you recently learned that you feel passionate about?",
       "tone": "warm",
       "gesture": "nod",
-      "audio_file": "q06.mp3"
+      "audio_file": "q06.wav"
     },
     {
       "id": 7,
       "question": "How do you prefer to receive feedback from your lead or peers?",
       "tone": "warm",
       "gesture": "lean_forward",
-      "audio_file": "q07.mp3"
+      "audio_file": "q07.wav"
     },
     {
       "id": 8,
       "question": "Tell me about a time when a mistake turned into a valuable learning opportunity.",
       "tone": "warm",
       "gesture": "smile",
-      "audio_file": "q08.mp3"
+      "audio_file": "q08.wav"
     },
     {
       "id": 9,
       "question": "How do you balance technical excellence with team velocity?",
       "tone": "warm",
       "gesture": "idle",
-      "audio_file": "q09.mp3"
+      "audio_file": "q09.wav"
     },
     {
       "id": 10,
       "question": "What environments bring out your best problem-solving energy?",
       "tone": "warm",
       "gesture": "thinking",
-      "audio_file": "q10.mp3"
+      "audio_file": "q10.wav"
     },
     {
       "id": 11,
       "question": "How do you ensure everyone on your team has a voice during design discussions?",
       "tone": "warm",
       "gesture": "nod",
-      "audio_file": "q11.mp3"
+      "audio_file": "q11.wav"
     },
     {
       "id": 12,
       "question": "Lastly, what are you most excited to build or learn next?",
       "tone": "warm",
       "gesture": "lean_forward",
-      "audio_file": "q12.mp3"
+      "audio_file": "q12.wav"
     }
   ]
 }

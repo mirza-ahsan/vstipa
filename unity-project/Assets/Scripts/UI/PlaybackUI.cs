@@ -14,6 +14,18 @@ public class PlaybackUI : MonoBehaviour
 
     [Header("Buttons")]
     public Button nextButton;
+    public Button warmButton;
+    public Button sternButton;
+    public Button neutralButton;
+    public Button restartButton;
+    public Button menuButton;
+
+    [Header("Experience Panels")]
+    public GameObject startPanel;
+    public GameObject interviewPanel;
+    public GameObject completionPanel;
+    public Text completionSummaryText;
+    public PersonaManager personaManager;
 
     private float lastAdvanceTime = 0f;
     private const float COOLDOWN_SEC = 0.5f;
@@ -22,7 +34,7 @@ public class PlaybackUI : MonoBehaviour
     {
         if (playbackController == null)
         {
-            playbackController = FindFirstObjectByType<QuestionPlaybackController>();
+            playbackController = FindAnyObjectByType<QuestionPlaybackController>();
         }
 
         if (playbackController != null)
@@ -35,6 +47,14 @@ public class PlaybackUI : MonoBehaviour
         {
             nextButton.onClick.AddListener(OnNextButtonClicked);
         }
+
+        warmButton?.onClick.AddListener(() => SelectPersona("warm"));
+        sternButton?.onClick.AddListener(() => SelectPersona("stern"));
+        neutralButton?.onClick.AddListener(() => SelectPersona("neutral"));
+        restartButton?.onClick.AddListener(RestartInterview);
+        menuButton?.onClick.AddListener(ShowStartScreen);
+
+        ShowStartScreen();
     }
 
     private void Update()
@@ -51,11 +71,50 @@ public class PlaybackUI : MonoBehaviour
                                Input.GetKeyDown(KeyCode.JoystickButton14) ||
                                Input.GetKeyDown(KeyCode.JoystickButton15);
 
-        if (vrInputDetected && (Time.time - lastAdvanceTime > COOLDOWN_SEC))
+        if (startPanel != null && startPanel.activeSelf)
+        {
+            if (Input.GetKeyDown(KeyCode.Alpha1)) SelectPersona("warm");
+            if (Input.GetKeyDown(KeyCode.Alpha2)) SelectPersona("stern");
+            if (Input.GetKeyDown(KeyCode.Alpha3)) SelectPersona("neutral");
+            return;
+        }
+
+        if (vrInputDetected && interviewPanel != null && interviewPanel.activeSelf &&
+            playbackController?.currentManifest != null && (Time.time - lastAdvanceTime > COOLDOWN_SEC))
         {
             lastAdvanceTime = Time.time;
             OnNextButtonClicked();
         }
+    }
+
+    public void SelectPersona(string persona)
+    {
+        if (personaManager == null || !personaManager.SelectPersona(persona)) return;
+        PersonaManager.PersonaSlot slot = personaManager.GetActiveSlot();
+        if (slot != null)
+        {
+            if (personaTitleText != null) personaTitleText.color = slot.accentColor;
+            if (nextButton != null && nextButton.image != null) nextButton.image.color = slot.accentColor;
+        }
+        startPanel?.SetActive(false);
+        completionPanel?.SetActive(false);
+        interviewPanel?.SetActive(true);
+        if (statusText != null) statusText.text = "Preparing interview...";
+    }
+
+    public void ShowStartScreen()
+    {
+        personaManager?.ReturnToSelection();
+        startPanel?.SetActive(true);
+        interviewPanel?.SetActive(false);
+        completionPanel?.SetActive(false);
+    }
+
+    public void RestartInterview()
+    {
+        completionPanel?.SetActive(false);
+        interviewPanel?.SetActive(true);
+        playbackController?.RestartPlayback();
     }
 
     public void OnNextButtonClicked()
@@ -86,20 +145,23 @@ public class PlaybackUI : MonoBehaviour
 
         if (statusText != null)
         {
-            statusText.text = $"Tone: {item.tone} | Gesture: {item.gesture}";
+            statusText.text = $"{item.tone.ToUpperInvariant()}  •  {item.gesture.Replace('_', ' ')}";
+        }
+
+        if (nextButton != null)
+        {
+            Text buttonText = nextButton.GetComponentInChildren<Text>();
+            bool isLast = playbackController.currentManifest != null &&
+                playbackController.currentQuestionIndex >= playbackController.currentManifest.questions.Count - 1;
+            if (buttonText != null) buttonText.text = isLast ? "Complete Interview" : "Next Question";
         }
     }
 
     private void HandlePlaybackFinished()
     {
-        if (questionContentText != null)
-        {
-            questionContentText.text = "Interview Complete! Press any button to restart.";
-        }
-
-        if (statusText != null)
-        {
-            statusText.text = "Completed";
-        }
+        interviewPanel?.SetActive(false);
+        completionPanel?.SetActive(true);
+        if (completionSummaryText != null)
+            completionSummaryText.text = $"You completed {playbackController.currentManifest?.total_questions ?? 0} questions with the {playbackController.currentManifest?.persona_name ?? "selected"} persona.";
     }
 }

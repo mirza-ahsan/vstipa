@@ -8,84 +8,84 @@
       "question": "We have strict performance constraints. Describe a production incident you directly caused or resolved.",
       "tone": "stern",
       "gesture": "arms_crossed",
-      "audio_file": "q01.mp3"
+      "audio_file": "q01.wav"
     },
     {
       "id": 2,
       "question": "Why did you choose that specific architecture over simpler alternatives?",
       "tone": "stern",
       "gesture": "lean_back",
-      "audio_file": "q02.mp3"
+      "audio_file": "q02.wav"
     },
     {
       "id": 3,
       "question": "How do you defend your technical decisions when senior engineers strongly disagree?",
       "tone": "stern",
       "gesture": "nod_firm",
-      "audio_file": "q03.mp3"
+      "audio_file": "q03.wav"
     },
     {
       "id": 4,
       "question": "Describe a scenario where you had to ship under tight deadline pressure with incomplete specs.",
       "tone": "stern",
       "gesture": "idle",
-      "audio_file": "q04.mp3"
+      "audio_file": "q04.wav"
     },
     {
       "id": 5,
       "question": "What is the single biggest architectural mistake you have made in your career?",
       "tone": "stern",
       "gesture": "thinking",
-      "audio_file": "q05.mp3"
+      "audio_file": "q05.wav"
     },
     {
       "id": 6,
       "question": "How do you handle working with team members who fail to meet performance expectations?",
       "tone": "stern",
       "gesture": "arms_crossed",
-      "audio_file": "q06.mp3"
+      "audio_file": "q06.wav"
     },
     {
       "id": 7,
       "question": "Walk me through how you optimize memory allocations in critical paths.",
       "tone": "stern",
       "gesture": "lean_back",
-      "audio_file": "q07.mp3"
+      "audio_file": "q07.wav"
     },
     {
       "id": 8,
       "question": "If your service experiences a 10x traffic spike right now, where will it fail first?",
       "tone": "stern",
       "gesture": "nod_firm",
-      "audio_file": "q08.mp3"
+      "audio_file": "q08.wav"
     },
     {
       "id": 9,
       "question": "When forced to cut scope to meet a release target, what criteria do you prioritize?",
       "tone": "stern",
       "gesture": "idle",
-      "audio_file": "q09.mp3"
+      "audio_file": "q09.wav"
     },
     {
       "id": 10,
       "question": "Explain how you debug non-deterministic race conditions under heavy load.",
       "tone": "stern",
       "gesture": "thinking",
-      "audio_file": "q10.mp3"
+      "audio_file": "q10.wav"
     },
     {
       "id": 11,
       "question": "Why should we trust your technical judgment on high-availability system designs?",
       "tone": "stern",
       "gesture": "arms_crossed",
-      "audio_file": "q11.mp3"
+      "audio_file": "q11.wav"
     },
     {
       "id": 12,
       "question": "What trade-offs did you make in your last project that you now regret?",
       "tone": "stern",
       "gesture": "lean_back",
-      "audio_file": "q12.mp3"
+      "audio_file": "q12.wav"
     }
   ]
 }

@@ -1,4 +1,5 @@
 import json
+import subprocess
 from pathlib import Path
 from gtts import gTTS
 
@@ -80,8 +81,9 @@ def generate_baked_content():
 
         for idx, q_text in enumerate(pdata["questions"], start=1):
             gesture = gestures[(idx - 1) % len(gestures)]
-            audio_filename = f"q{idx:02d}.mp3"
+            audio_filename = f"q{idx:02d}.wav"
             audio_path = persona_streaming_dir / audio_filename
+            temporary_mp3 = persona_streaming_dir / f"q{idx:02d}.source.mp3"
 
             q_items.append({
                 "question": q_text,
@@ -91,7 +93,15 @@ def generate_baked_content():
 
             print(f"[{persona_id}] Synthesizing spoken voice for Q{idx:02d}...")
             tts = gTTS(text=q_text, lang='en', slow=False)
-            tts.save(str(audio_path))
+            tts.save(str(temporary_mp3))
+            subprocess.run(
+                [
+                    "ffmpeg", "-y", "-loglevel", "error", "-i", str(temporary_mp3),
+                    "-ac", "1", "-ar", "24000", "-c:a", "pcm_s16le", str(audio_path)
+                ],
+                check=True
+            )
+            temporary_mp3.unlink()
 
             manifest_entries.append({
                 "id": idx,

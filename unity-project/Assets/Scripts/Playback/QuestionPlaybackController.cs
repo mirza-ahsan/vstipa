@@ -9,6 +9,8 @@ public class QuestionPlaybackController : MonoBehaviour
     public string selectedPersona = "warm";
     public AudioSource audioSource;
     public float audioGainMultiplier = 3.5f;
+    public bool loadOnStart = true;
+    public bool autoStartOnManifestLoad = true;
 
     [Header("Avatar Components")]
     public AvatarGestureController activeAvatarGestureController;
@@ -21,6 +23,10 @@ public class QuestionPlaybackController : MonoBehaviour
 
     public event Action<QuestionItemData> OnQuestionChanged;
     public event Action OnPlaybackFinished;
+    public event Action<PersonaManifestData> OnManifestLoaded;
+
+    private Coroutine manifestLoadCoroutine;
+    private Coroutine audioLoadCoroutine;
 
     private void Start()
     {
@@ -45,7 +51,7 @@ public class QuestionPlaybackController : MonoBehaviour
         audioSource.bypassReverbZones = true;
 
         BindActiveAvatar();
-        LoadManifest(selectedPersona);
+        if (loadOnStart) LoadManifest(selectedPersona);
     }
 
     private void OnApplicationFocus(bool hasFocus)
@@ -82,11 +88,14 @@ public class QuestionPlaybackController : MonoBehaviour
 
     public void LoadManifest(string persona)
     {
+        StopPlayback();
         selectedPersona = persona;
         currentQuestionIndex = -1;
+        currentManifest = null;
 
         string manifestUrl = GetStreamingAssetsUrl($"questions/{selectedPersona}/manifest.json");
-        StartCoroutine(LoadManifestCoroutine(manifestUrl));
+        if (manifestLoadCoroutine != null) StopCoroutine(manifestLoadCoroutine);
+        manifestLoadCoroutine = StartCoroutine(LoadManifestCoroutine(manifestUrl));
     }
 
     private string GetStreamingAssetsUrl(string relativePath)
@@ -96,7 +105,11 @@ public class QuestionPlaybackController : MonoBehaviour
         {
             baseDir += "/";
         }
-        return baseDir + relativePath;
+        string combined = baseDir + relativePath;
+#if UNITY_EDITOR || UNITY_STANDALONE
+        if (!combined.Contains("://")) combined = "file://" + combined;
+#endif
+        return combined;
     }
 
     private IEnumerator LoadManifestCoroutine(string url)
@@ -109,9 +122,9 @@ public class QuestionPlaybackController : MonoBehaviour
                 string jsonText = www.downloadHandler.text;
                 currentManifest = JsonUtility.FromJson<PersonaManifestData>(jsonText);
                 Debug.Log($"[QuestionPlaybackController] Successfully loaded manifest from '{url}' with {currentManifest?.questions?.Count ?? 0} questions.");
+                OnManifestLoaded?.Invoke(currentManifest);
 
-                // Auto-start Question 1 immediately on app load
-                AdvanceToNextQuestion();
+                if (autoStartOnManifestLoad) AdvanceToNextQuestion();
             }
             else
             {
@@ -126,6 +139,17 @@ public class QuestionPlaybackController : MonoBehaviour
         AdvanceToNextQuestion();
     }
 
+    public void StopPlayback()
+    {
+        if (audioLoadCoroutine != null)
+        {
+            StopCoroutine(audioLoadCoroutine);
+            audioLoadCoroutine = null;
+        }
+        if (audioSource != null) audioSource.Stop();
+        isPlaying = false;
+    }
+
     public void AdvanceToNextQuestion()
     {
         if (currentManifest == null || currentManifest.questions == null || currentManifest.questions.Count == 0)
@@ -137,9 +161,10 @@ public class QuestionPlaybackController : MonoBehaviour
         currentQuestionIndex++;
         if (currentQuestionIndex >= currentManifest.questions.Count)
         {
-            Debug.Log("[QuestionPlaybackController] Reached end of questions set, looping back to Question 1.");
-            currentQuestionIndex = 0; // Loop back to Question 1
+            currentQuestionIndex = currentManifest.questions.Count - 1;
+            Debug.Log("[QuestionPlaybackController] Reached end of question set.");
             OnPlaybackFinished?.Invoke();
+            return;
         }
 
         QuestionItemData item = currentManifest.questions[currentQuestionIndex];
@@ -149,10 +174,14 @@ public class QuestionPlaybackController : MonoBehaviour
         if (activeAvatarGestureController != null && !string.IsNullOrEmpty(item.gesture))
         {
             activeAvatarGestureController.TriggerGesture(item.gesture);
-            Debug.Log($"[QuestionPlaybackController] Triggered Avatar Gesture: '{item.gesture}' for Q{item.id:02d}");
+            Debug.Log($"[QuestionPlaybackController] Triggered Avatar Gesture: '{item.gesture}' for Q{item.id:D2}");
         }
 
-        StartCoroutine(PlayQuestionAudioCoroutine(item));
+        if (audioSource != null)
+        {
+            if (audioLoadCoroutine != null) StopCoroutine(audioLoadCoroutine);
+            audioLoadCoroutine = StartCoroutine(PlayQuestionAudioCoroutine(item));
+        }
     }
 
     private IEnumerator PlayQuestionAudioCoroutine(QuestionItemData item)
@@ -163,24 +192,37 @@ public class QuestionPlaybackController : MonoBehaviour
         string audioUrl = GetStreamingAssetsUrl($"questions/{selectedPersona}/{item.audio_file}");
         Debug.Log($"[QuestionPlaybackController] Loading spoken voice audio clip from URL: {audioUrl}");
 
-        AudioType audioType = item.audio_file.EndsWith(".mp3") ? AudioType.MPEG : AudioType.WAV;
+        bool isWav = item.audio_file.EndsWith(".wav", StringComparison.OrdinalIgnoreCase);
+        AudioType audioType = item.audio_file.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase) ? AudioType.MPEG : AudioType.WAV;
 
-        using (UnityWebRequest www = UnityWebRequestMultimedia.GetAudioClip(audioUrl, audioType))
+        using (UnityWebRequest www = isWav
+            ? UnityWebRequest.Get(audioUrl)
+            : UnityWebRequestMultimedia.GetAudioClip(audioUrl, audioType))
         {
             yield return www.SendWebRequest();
 
             if (www.result == UnityWebRequest.Result.Success)
             {
-                AudioClip clip = DownloadHandlerAudioClip.GetContent(www);
-                if (clip != null && clip.length > 0)
+                // Unity WebGL can expose downloaded MP3/WAV clips as zero-length WebAudio
+                // proxies. Parsing baked PCM WAV bytes ourselves gives uLipSync readable,
+                // deterministic samples on every target.
+                AudioClip clip = isWav
+                    ? WavUtility.ToAudioClip(www.downloadHandler.data, $"{selectedPersona}_q{item.id:D2}")
+                    : DownloadHandlerAudioClip.GetContent(www);
+                if (clip != null)
                 {
+                    if (clip.length <= 0f)
+                    {
+                        Debug.LogWarning($"[QuestionPlaybackController] Downloaded {audioUrl}, but this platform currently reports a zero duration. Attempting playback anyway.");
+                    }
+
                     AmplifyAudioClip(clip, audioGainMultiplier);
                     AudioListener.pause = false;
                     AudioListener.volume = 1.0f;
                     audioSource.clip = clip;
                     audioSource.volume = 1.0f;
                     audioSource.Play();
-                    Debug.Log($"[QuestionPlaybackController] PLAYING SPOKEN VOICE Q{item.id:02d} SUCCESS (Gain={audioGainMultiplier:F1}x): '{item.question}' ({clip.length:F2}s, {clip.frequency} Hz)");
+                    Debug.Log($"[QuestionPlaybackController] PLAYING SPOKEN VOICE Q{item.id:D2} SUCCESS (Gain={audioGainMultiplier:F1}x): '{item.question}' ({clip.length:F2}s, {clip.frequency} Hz)");
                 }
                 else
                 {
@@ -194,6 +236,7 @@ public class QuestionPlaybackController : MonoBehaviour
         }
 
         isPlaying = false;
+        audioLoadCoroutine = null;
     }
 
     private void AmplifyAudioClip(AudioClip clip, float gain)

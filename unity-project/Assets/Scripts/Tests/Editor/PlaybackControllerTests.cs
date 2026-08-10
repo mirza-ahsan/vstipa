@@ -1,9 +1,25 @@
 using System.Collections.Generic;
+using System.IO;
 using NUnit.Framework;
 using UnityEngine;
 
 public class PlaybackControllerTests
 {
+    [Test]
+    public void TestBakedWavIsReadableForLipSync()
+    {
+        string path = Path.Combine(Application.streamingAssetsPath, "questions", "warm", "q01.wav");
+        Assert.IsTrue(File.Exists(path));
+
+        AudioClip clip = WavUtility.ToAudioClip(File.ReadAllBytes(path), "warm_q01_test");
+        Assert.IsNotNull(clip);
+        Assert.Greater(clip.length, 1f);
+        Assert.AreEqual(24000, clip.frequency);
+        Assert.AreEqual(1, clip.channels);
+
+        Object.DestroyImmediate(clip);
+    }
+
     [Test]
     public void TestManifestJsonDeserialization()
     {

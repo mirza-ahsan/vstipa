@@ -1,5 +1,7 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Animations;
+using UnityEngine.Playables;
 
 public class AvatarGestureController : MonoBehaviour
 {
@@ -8,6 +10,10 @@ public class AvatarGestureController : MonoBehaviour
     public Transform spineBone;
     public Transform leftArmBone;
     public Transform rightArmBone;
+
+    [Header("Base Animation")]
+    [Tooltip("Optional animation authored for this exact avatar. It is played as the base pose beneath procedural gestures.")]
+    public AnimationClip idleClip;
 
     [Header("State")]
     public string currentGesture = "idle";
@@ -18,10 +24,81 @@ public class AvatarGestureController : MonoBehaviour
     private Quaternion origRightArmRot;
 
     private Coroutine activeGestureCoroutine;
+    private PlayableGraph idleGraph;
+    private AnimationClipPlayable idlePlayable;
 
     private void Start()
     {
+        AutoBindBones();
         CacheOriginalRotations();
+        StartIdleAnimation();
+    }
+
+    private void OnDestroy()
+    {
+        if (idleGraph.IsValid())
+        {
+            idleGraph.Destroy();
+        }
+    }
+
+    private void Update()
+    {
+        if (idleGraph.IsValid() && idleClip != null && idleClip.length > 0f && idlePlayable.GetTime() >= idleClip.length)
+        {
+            idlePlayable.SetTime(idlePlayable.GetTime() % idleClip.length);
+        }
+    }
+
+    public void AutoBindBones()
+    {
+        Animator animator = GetComponentInChildren<Animator>(true);
+        if (animator != null && animator.isHuman)
+        {
+            headBone ??= animator.GetBoneTransform(HumanBodyBones.Head);
+            spineBone ??= animator.GetBoneTransform(HumanBodyBones.Spine);
+            leftArmBone ??= animator.GetBoneTransform(HumanBodyBones.LeftUpperArm);
+            rightArmBone ??= animator.GetBoneTransform(HumanBodyBones.RightUpperArm);
+        }
+
+        headBone ??= FindDescendant("Head");
+        spineBone ??= FindDescendant("Spine", "Spine1", "Spine2", "Chest");
+        leftArmBone ??= FindDescendant("LeftArm", "LeftUpperArm");
+        rightArmBone ??= FindDescendant("RightArm", "RightUpperArm");
+    }
+
+    private Transform FindDescendant(params string[] candidateNames)
+    {
+        foreach (Transform child in GetComponentsInChildren<Transform>(true))
+        {
+            foreach (string candidate in candidateNames)
+            {
+                if (string.Equals(child.name, candidate, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    return child;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private void StartIdleAnimation()
+    {
+        Animator animator = GetComponentInChildren<Animator>(true);
+        if (idleClip == null || animator == null)
+        {
+            return;
+        }
+
+        idleGraph = PlayableGraph.Create($"{name}_IdleGraph");
+        idleGraph.SetTimeUpdateMode(DirectorUpdateMode.GameTime);
+
+        AnimationPlayableOutput output = AnimationPlayableOutput.Create(idleGraph, "Idle", animator);
+        idlePlayable = AnimationClipPlayable.Create(idleGraph, idleClip);
+        idlePlayable.SetApplyFootIK(false);
+        output.SetSourcePlayable(idlePlayable);
+        idleGraph.Play();
     }
 
     public void CacheOriginalRotations()
