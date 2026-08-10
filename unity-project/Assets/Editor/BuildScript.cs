@@ -22,8 +22,8 @@ public static class BuildScript
             mainCam.backgroundColor = new Color(0.06f, 0.08f, 0.14f);
         }
 
-        // 2. Generate and Instantiate Full-Body 3D Humanoid Avatar (Phase 3)
-        GameObject avatarRoot = AvatarMeshGenerator.CreateAvatar("WarmAvatar", new Color(0.18f, 0.52f, 0.65f), new Color(0.92f, 0.78f, 0.68f), new Color(0.15f, 0.12f, 0.10f));
+        // 2. Generate and Instantiate Meta Horizon Style 3D Humanoid Avatar (Beanie, Grey Blazer, White Shirt, Trousers)
+        GameObject avatarRoot = AvatarMeshGenerator.CreateMetaStyleAvatar("WarmAvatar", new Color(0.45f, 0.48f, 0.52f), new Color(0.96f, 0.96f, 0.96f), new Color(0.85f, 0.68f, 0.58f), new Color(0.18f, 0.18f, 0.20f));
         avatarRoot.transform.position = new Vector3(-0.40f, 0f, 1.80f); // Standing at eye level 1.8m in front
         avatarRoot.transform.rotation = Quaternion.Euler(0, 165.0f, 0); // Facing user
 
@@ -129,7 +129,7 @@ public static class BuildScript
         statusText.fontSize = 26;
         statusText.alignment = TextAnchor.MiddleCenter;
         statusText.color = Color.lightGray;
-        statusText.text = "Phase 3: 3D Humanoid Avatar & Lip-Sync Active";
+        statusText.text = "Phase 3: Meta Horizon-Style 3D Avatar Active";
         statusText.horizontalOverflow = HorizontalWrapMode.Wrap;
         statusText.verticalOverflow = VerticalWrapMode.Overflow;
         RectTransform statusRt = statusTextGo.GetComponent<RectTransform>();
@@ -171,7 +171,7 @@ public static class BuildScript
         string scenePath = "Assets/Scenes/MainScene.unity";
         System.IO.Directory.CreateDirectory("Assets/Scenes");
         UnityEditor.SceneManagement.EditorSceneManager.SaveScene(scene, scenePath);
-        Debug.Log("[BuildScript] Phase 3 MainScene.unity with Full 3D Humanoid Character Avatar configured and saved.");
+        Debug.Log("[BuildScript] Phase 3 MainScene.unity with Meta Horizon Style 3D Humanoid Avatar configured and saved.");
     }
 
     public static void BuildAndroid()

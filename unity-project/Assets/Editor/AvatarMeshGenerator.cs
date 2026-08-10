@@ -3,39 +3,31 @@ using UnityEngine;
 
 public static class AvatarMeshGenerator
 {
-    [MenuItem("V-STIPA/Generate 3D Avatars")]
+    [MenuItem("V-STIPA/Generate Stylized Meta-Style Avatars")]
     public static void GenerateAvatars()
     {
-        CreateAvatar("WarmAvatar", new Color(0.18f, 0.52f, 0.65f), new Color(0.92f, 0.78f, 0.68f), new Color(0.15f, 0.12f, 0.10f));
-        CreateAvatar("SternAvatar", new Color(0.20f, 0.22f, 0.28f), new Color(0.88f, 0.74f, 0.64f), new Color(0.25f, 0.20f, 0.15f));
-        CreateAvatar("NeutralAvatar", new Color(0.15f, 0.28f, 0.45f), new Color(0.90f, 0.76f, 0.66f), new Color(0.30f, 0.22f, 0.18f));
-        Debug.Log("[AvatarMeshGenerator] Detailed 3D Humanoid Avatars generated successfully.");
+        CreateMetaStyleAvatar("WarmAvatar", new Color(0.45f, 0.48f, 0.52f), new Color(0.96f, 0.96f, 0.96f), new Color(0.85f, 0.68f, 0.58f), new Color(0.18f, 0.18f, 0.20f));
+        CreateMetaStyleAvatar("SternAvatar", new Color(0.25f, 0.28f, 0.32f), new Color(0.90f, 0.90f, 0.92f), new Color(0.80f, 0.64f, 0.54f), new Color(0.12f, 0.12f, 0.14f));
+        CreateMetaStyleAvatar("NeutralAvatar", new Color(0.35f, 0.40f, 0.48f), new Color(0.94f, 0.94f, 0.94f), new Color(0.88f, 0.70f, 0.60f), new Color(0.15f, 0.15f, 0.18f));
+        Debug.Log("[AvatarMeshGenerator] Stylized Meta-Style Avatars (Beanie, Grey Blazer, White Shirt, Trousers) generated successfully.");
     }
 
-    public static GameObject CreateAvatar(string avatarName, Color suitColor, Color skinColor, Color hairColor)
+    public static GameObject CreateMetaStyleAvatar(string avatarName, Color blazerColor, Color shirtColor, Color skinColor, Color beanieColor)
     {
         GameObject rootGo = new GameObject(avatarName);
 
-        // Materials
-        Material suitMat = new Material(Shader.Find("Standard"));
-        suitMat.color = suitColor;
+        // Materials with Smooth Standard Shaders
+        Material blazerMat = CreateSmoothMaterial(blazerColor, 0.2f);
+        Material shirtMat = CreateSmoothMaterial(shirtColor, 0.1f);
+        Material trouserMat = CreateSmoothMaterial(new Color(0.12f, 0.12f, 0.14f), 0.1f);
+        Material skinMat = CreateSmoothMaterial(skinColor, 0.3f);
+        Material beanieMat = CreateSmoothMaterial(beanieColor, 0.05f);
+        Material eyeMat = CreateSmoothMaterial(new Color(0.08f, 0.08f, 0.10f), 0.8f);
+        Material eyeWhiteMat = CreateSmoothMaterial(Color.white, 0.6f);
+        Material eyebrowMat = CreateSmoothMaterial(new Color(0.12f, 0.10f, 0.08f), 0.1f);
+        Material shoeMat = CreateSmoothMaterial(new Color(0.08f, 0.08f, 0.08f), 0.4f);
 
-        Material shirtMat = new Material(Shader.Find("Standard"));
-        shirtMat.color = Color.white;
-
-        Material skinMat = new Material(Shader.Find("Standard"));
-        skinMat.color = skinColor;
-
-        Material hairMat = new Material(Shader.Find("Standard"));
-        hairMat.color = hairColor;
-
-        Material eyeMat = new Material(Shader.Find("Standard"));
-        eyeMat.color = new Color(0.1f, 0.1f, 0.1f);
-
-        Material shoeMat = new Material(Shader.Find("Standard"));
-        shoeMat.color = new Color(0.08f, 0.08f, 0.08f);
-
-        // 1. Bones Hierarchy (Humanoid 1.75m Skeleton)
+        // 1. Humanoid Skeleton (1.75m Scale)
         GameObject hips = new GameObject("Hips");
         hips.transform.SetParent(rootGo.transform, false);
         hips.transform.localPosition = new Vector3(0, 0.90f, 0);
@@ -56,36 +48,35 @@ public static class AvatarMeshGenerator
         head.transform.SetParent(neck.transform, false);
         head.transform.localPosition = new Vector3(0, 0.14f, 0);
 
-        // Left Arm Hierarchy
+        // Arms & Shoulders
         GameObject leftShoulder = new GameObject("LeftShoulder");
         leftShoulder.transform.SetParent(chest.transform, false);
         leftShoulder.transform.localPosition = new Vector3(-0.20f, 0.12f, 0);
 
         GameObject leftArm = new GameObject("LeftArm");
         leftArm.transform.SetParent(leftShoulder.transform, false);
-        leftArm.transform.localPosition = new Vector3(-0.12f, 0, 0);
+        leftArm.transform.localPosition = new Vector3(-0.10f, 0, 0);
 
         GameObject leftForeArm = new GameObject("LeftForeArm");
         leftForeArm.transform.SetParent(leftArm.transform, false);
         leftForeArm.transform.localPosition = new Vector3(0, -0.28f, 0);
 
-        // Right Arm Hierarchy
         GameObject rightShoulder = new GameObject("RightShoulder");
         rightShoulder.transform.SetParent(chest.transform, false);
         rightShoulder.transform.localPosition = new Vector3(0.20f, 0.12f, 0);
 
         GameObject rightArm = new GameObject("RightArm");
         rightArm.transform.SetParent(rightShoulder.transform, false);
-        rightArm.transform.localPosition = new Vector3(0.12f, 0, 0);
+        rightArm.transform.localPosition = new Vector3(0.10f, 0, 0);
 
         GameObject rightForeArm = new GameObject("RightForeArm");
         rightForeArm.transform.SetParent(rightArm.transform, false);
         rightForeArm.transform.localPosition = new Vector3(0, -0.28f, 0);
 
-        // Legs Hierarchy
+        // Legs
         GameObject leftUpLeg = new GameObject("LeftUpLeg");
         leftUpLeg.transform.SetParent(hips.transform, false);
-        leftUpLeg.transform.localPosition = new Vector3(-0.12f, 0, 0);
+        leftUpLeg.transform.localPosition = new Vector3(-0.11f, 0, 0);
 
         GameObject leftLeg = new GameObject("LeftLeg");
         leftLeg.transform.SetParent(leftUpLeg.transform, false);
@@ -93,91 +84,118 @@ public static class AvatarMeshGenerator
 
         GameObject rightUpLeg = new GameObject("RightUpLeg");
         rightUpLeg.transform.SetParent(hips.transform, false);
-        rightUpLeg.transform.localPosition = new Vector3(0.12f, 0, 0);
+        rightUpLeg.transform.localPosition = new Vector3(0.11f, 0, 0);
 
         GameObject rightLeg = new GameObject("RightLeg");
         rightLeg.transform.SetParent(rightUpLeg.transform, false);
         rightLeg.transform.localPosition = new Vector3(0, -0.42f, 0);
 
-        // 2. Torso Geometry (Suit Jacket & Shirt)
-        GameObject jacketGo = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        jacketGo.name = "Jacket";
-        jacketGo.transform.SetParent(chest.transform, false);
-        jacketGo.transform.localPosition = new Vector3(0, -0.05f, 0);
-        jacketGo.transform.localScale = new Vector3(0.44f, 0.38f, 0.26f);
-        jacketGo.GetComponent<Renderer>().sharedMaterial = suitMat;
-        Object.DestroyImmediate(jacketGo.GetComponent<Collider>());
+        // 2. Clothing (Grey Blazer + White Shirt V-Neck)
+        GameObject blazerTorso = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        blazerTorso.name = "GreyBlazerTorso";
+        blazerTorso.transform.SetParent(chest.transform, false);
+        blazerTorso.transform.localPosition = new Vector3(0, -0.04f, 0);
+        blazerTorso.transform.localScale = new Vector3(0.42f, 0.36f, 0.24f);
+        blazerTorso.GetComponent<Renderer>().sharedMaterial = blazerMat;
+        Object.DestroyImmediate(blazerTorso.GetComponent<Collider>());
 
-        GameObject shirtGo = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        shirtGo.name = "ShirtCollar";
-        shirtGo.transform.SetParent(neck.transform, false);
-        shirtGo.transform.localPosition = new Vector3(0, -0.08f, 0.04f);
-        shirtGo.transform.localScale = new Vector3(0.18f, 0.12f, 0.16f);
-        shirtGo.GetComponent<Renderer>().sharedMaterial = shirtMat;
-        Object.DestroyImmediate(shirtGo.GetComponent<Collider>());
+        // Blazer Lapels
+        GameObject leftLapel = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        leftLapel.name = "LeftLapel";
+        leftLapel.transform.SetParent(chest.transform, false);
+        leftLapel.transform.localPosition = new Vector3(-0.09f, 0.04f, 0.125f);
+        leftLapel.transform.localScale = new Vector3(0.08f, 0.20f, 0.02f);
+        leftLapel.transform.localRotation = Quaternion.Euler(0, 0, -12f);
+        leftLapel.GetComponent<Renderer>().sharedMaterial = blazerMat;
+        Object.DestroyImmediate(leftLapel.GetComponent<Collider>());
 
-        // 3. Neck & Head Mesh
+        GameObject rightLapel = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        rightLapel.name = "RightLapel";
+        rightLapel.transform.SetParent(chest.transform, false);
+        rightLapel.transform.localPosition = new Vector3(0.09f, 0.04f, 0.125f);
+        rightLapel.transform.localScale = new Vector3(0.08f, 0.20f, 0.02f);
+        rightLapel.transform.localRotation = Quaternion.Euler(0, 0, 12f);
+        rightLapel.GetComponent<Renderer>().sharedMaterial = blazerMat;
+        Object.DestroyImmediate(rightLapel.GetComponent<Collider>());
+
+        // White V-Neck Shirt
+        GameObject shirtV = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        shirtV.name = "WhiteShirtVNeck";
+        shirtV.transform.SetParent(chest.transform, false);
+        shirtV.transform.localPosition = new Vector3(0, 0.02f, 0.115f);
+        shirtV.transform.localScale = new Vector3(0.16f, 0.22f, 0.02f);
+        shirtV.GetComponent<Renderer>().sharedMaterial = shirtMat;
+        Object.DestroyImmediate(shirtV.GetComponent<Collider>());
+
+        // Neck Mesh
         GameObject neckMesh = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
         neckMesh.name = "NeckMesh";
         neckMesh.transform.SetParent(neck.transform, false);
         neckMesh.transform.localPosition = new Vector3(0, -0.02f, 0);
-        neckMesh.transform.localScale = new Vector3(0.14f, 0.08f, 0.14f);
+        neckMesh.transform.localScale = new Vector3(0.13f, 0.08f, 0.13f);
         neckMesh.GetComponent<Renderer>().sharedMaterial = skinMat;
         Object.DestroyImmediate(neckMesh.GetComponent<Collider>());
 
-        // Head Skinned Mesh Renderer with Facial Blendshapes
+        // 3. Head & Facial Features (Skinned Mesh + Beanie)
         GameObject headMeshGo = new GameObject("HeadMesh");
         headMeshGo.transform.SetParent(head.transform, false);
         SkinnedMeshRenderer headRenderer = headMeshGo.AddComponent<SkinnedMeshRenderer>();
         headRenderer.sharedMaterial = skinMat;
 
-        Mesh headMesh = BuildDetailedHeadMesh();
+        Mesh headMesh = BuildMetaFacialMesh();
         headRenderer.sharedMesh = headMesh;
         headRenderer.bones = new Transform[] { head.transform, neck.transform };
         headRenderer.rootBone = head.transform;
 
-        // Eyes & Hair Features
-        GameObject leftEye = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        leftEye.name = "LeftEye";
-        leftEye.transform.SetParent(head.transform, false);
-        leftEye.transform.localPosition = new Vector3(-0.045f, 0.03f, 0.125f);
-        leftEye.transform.localScale = new Vector3(0.025f, 0.025f, 0.025f);
-        leftEye.GetComponent<Renderer>().sharedMaterial = eyeMat;
-        Object.DestroyImmediate(leftEye.GetComponent<Collider>());
+        // Beanie Cap (Matching Reference Image)
+        GameObject beanieGo = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        beanieGo.name = "BeanieCap";
+        beanieGo.transform.SetParent(head.transform, false);
+        beanieGo.transform.localPosition = new Vector3(0, 0.075f, -0.01f);
+        beanieGo.transform.localScale = new Vector3(0.285f, 0.18f, 0.295f);
+        beanieGo.GetComponent<Renderer>().sharedMaterial = beanieMat;
+        Object.DestroyImmediate(beanieGo.GetComponent<Collider>());
 
-        GameObject rightEye = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        rightEye.name = "RightEye";
-        rightEye.transform.SetParent(head.transform, false);
-        rightEye.transform.localPosition = new Vector3(0.045f, 0.03f, 0.125f);
-        rightEye.transform.localScale = new Vector3(0.025f, 0.025f, 0.025f);
-        rightEye.GetComponent<Renderer>().sharedMaterial = eyeMat;
-        Object.DestroyImmediate(rightEye.GetComponent<Collider>());
+        // Eyes (Whites & Pupils)
+        CreateEye(head.transform, "LeftEye", new Vector3(-0.048f, 0.025f, 0.125f), eyeWhiteMat, eyeMat);
+        CreateEye(head.transform, "RightEye", new Vector3(0.048f, 0.025f, 0.125f), eyeWhiteMat, eyeMat);
 
-        GameObject hairGo = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        hairGo.name = "Hair";
-        hairGo.transform.SetParent(head.transform, false);
-        hairGo.transform.localPosition = new Vector3(0, 0.07f, -0.02f);
-        hairGo.transform.localScale = new Vector3(0.28f, 0.16f, 0.30f);
-        hairGo.GetComponent<Renderer>().sharedMaterial = hairMat;
-        Object.DestroyImmediate(hairGo.GetComponent<Collider>());
+        // Eyebrows
+        GameObject leftBrow = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        leftBrow.name = "LeftEyebrow";
+        leftBrow.transform.SetParent(head.transform, false);
+        leftBrow.transform.localPosition = new Vector3(-0.048f, 0.052f, 0.132f);
+        leftBrow.transform.localScale = new Vector3(0.038f, 0.008f, 0.012f);
+        leftBrow.transform.localRotation = Quaternion.Euler(0, 0, -4f);
+        leftBrow.GetComponent<Renderer>().sharedMaterial = eyebrowMat;
+        Object.DestroyImmediate(leftBrow.GetComponent<Collider>());
 
-        // 4. Arms Geometry
-        CreateLimb(leftArm.transform, "LeftUpperArmMesh", new Vector3(0, -0.14f, 0), new Vector3(0.12f, 0.28f, 0.12f), suitMat);
-        CreateLimb(leftForeArm.transform, "LeftLowerArmMesh", new Vector3(0, -0.14f, 0), new Vector3(0.10f, 0.26f, 0.10f), suitMat);
-        CreateLimb(leftForeArm.transform, "LeftHandMesh", new Vector3(0, -0.30f, 0), new Vector3(0.09f, 0.12f, 0.04f), skinMat);
+        GameObject rightBrow = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        rightBrow.name = "RightEyebrow";
+        rightBrow.transform.SetParent(head.transform, false);
+        rightBrow.transform.localPosition = new Vector3(0.048f, 0.052f, 0.132f);
+        rightBrow.transform.localScale = new Vector3(0.038f, 0.008f, 0.012f);
+        rightBrow.transform.localRotation = Quaternion.Euler(0, 0, 4f);
+        rightBrow.GetComponent<Renderer>().sharedMaterial = eyebrowMat;
+        Object.DestroyImmediate(rightBrow.GetComponent<Collider>());
 
-        CreateLimb(rightArm.transform, "RightUpperArmMesh", new Vector3(0, -0.14f, 0), new Vector3(0.12f, 0.28f, 0.12f), suitMat);
-        CreateLimb(rightForeArm.transform, "RightLowerArmMesh", new Vector3(0, -0.14f, 0), new Vector3(0.10f, 0.26f, 0.10f), suitMat);
-        CreateLimb(rightForeArm.transform, "RightHandMesh", new Vector3(0, -0.30f, 0), new Vector3(0.09f, 0.12f, 0.04f), skinMat);
+        // 4. Arms (Blazer Sleeves + Hands)
+        CreatePart(leftArm.transform, "LeftBlazerSleeve", new Vector3(0, -0.14f, 0), new Vector3(0.12f, 0.28f, 0.12f), blazerMat);
+        CreatePart(leftForeArm.transform, "LeftBlazerLowerSleeve", new Vector3(0, -0.12f, 0), new Vector3(0.10f, 0.22f, 0.10f), blazerMat);
+        CreatePart(leftForeArm.transform, "LeftHand", new Vector3(0, -0.28f, 0), new Vector3(0.085f, 0.11f, 0.04f), skinMat);
 
-        // 5. Legs Geometry
-        CreateLimb(leftUpLeg.transform, "LeftUpperLegMesh", new Vector3(0, -0.21f, 0), new Vector3(0.16f, 0.40f, 0.16f), suitMat);
-        CreateLimb(leftLeg.transform, "LeftLowerLegMesh", new Vector3(0, -0.21f, 0), new Vector3(0.14f, 0.40f, 0.14f), suitMat);
-        CreateLimb(leftLeg.transform, "LeftShoeMesh", new Vector3(0, -0.43f, 0.06f), new Vector3(0.12f, 0.08f, 0.24f), shoeMat);
+        CreatePart(rightArm.transform, "RightBlazerSleeve", new Vector3(0, -0.14f, 0), new Vector3(0.12f, 0.28f, 0.12f), blazerMat);
+        CreatePart(rightForeArm.transform, "RightBlazerLowerSleeve", new Vector3(0, -0.12f, 0), new Vector3(0.10f, 0.22f, 0.10f), blazerMat);
+        CreatePart(rightForeArm.transform, "RightHand", new Vector3(0, -0.28f, 0), new Vector3(0.085f, 0.11f, 0.04f), skinMat);
 
-        CreateLimb(rightUpLeg.transform, "RightUpperLegMesh", new Vector3(0, -0.21f, 0), new Vector3(0.16f, 0.40f, 0.16f), suitMat);
-        CreateLimb(rightLeg.transform, "RightLowerLegMesh", new Vector3(0, -0.21f, 0), new Vector3(0.14f, 0.40f, 0.14f), suitMat);
-        CreateLimb(rightLeg.transform, "RightShoeMesh", new Vector3(0, -0.43f, 0.06f), new Vector3(0.12f, 0.08f, 0.24f), shoeMat);
+        // 5. Trousers & Shoes
+        CreatePart(leftUpLeg.transform, "LeftTrouserUpper", new Vector3(0, -0.21f, 0), new Vector3(0.15f, 0.40f, 0.15f), trouserMat);
+        CreatePart(leftLeg.transform, "LeftTrouserLower", new Vector3(0, -0.21f, 0), new Vector3(0.13f, 0.40f, 0.13f), trouserMat);
+        CreatePart(leftLeg.transform, "LeftShoe", new Vector3(0, -0.43f, 0.05f), new Vector3(0.11f, 0.08f, 0.24f), shoeMat);
+
+        CreatePart(rightUpLeg.transform, "RightTrouserUpper", new Vector3(0, -0.21f, 0), new Vector3(0.15f, 0.40f, 0.15f), trouserMat);
+        CreatePart(rightLeg.transform, "RightTrouserLower", new Vector3(0, -0.21f, 0), new Vector3(0.13f, 0.40f, 0.13f), trouserMat);
+        CreatePart(rightLeg.transform, "RightShoe", new Vector3(0, -0.43f, 0.05f), new Vector3(0.11f, 0.08f, 0.24f), shoeMat);
 
         // 6. Controllers Attachment
         AvatarGestureController gestureCtrl = rootGo.AddComponent<AvatarGestureController>();
@@ -193,24 +211,51 @@ public static class AvatarMeshGenerator
         return rootGo;
     }
 
-    private static void CreateLimb(Transform parent, string name, Vector3 localPos, Vector3 scale, Material mat)
+    private static Material CreateSmoothMaterial(Color col, float smoothness)
     {
-        GameObject limb = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        limb.name = name;
-        limb.transform.SetParent(parent, false);
-        limb.transform.localPosition = localPos;
-        limb.transform.localScale = scale;
-        limb.GetComponent<Renderer>().sharedMaterial = mat;
-        Object.DestroyImmediate(limb.GetComponent<Collider>());
+        Material mat = new Material(Shader.Find("Standard"));
+        mat.color = col;
+        mat.SetFloat("_Glossiness", smoothness);
+        return mat;
     }
 
-    private static Mesh BuildDetailedHeadMesh()
+    private static void CreateEye(Transform parent, string name, Vector3 pos, Material whiteMat, Material pupilMat)
+    {
+        GameObject eyeBase = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        eyeBase.name = name;
+        eyeBase.transform.SetParent(parent, false);
+        eyeBase.transform.localPosition = pos;
+        eyeBase.transform.localScale = new Vector3(0.028f, 0.024f, 0.020f);
+        eyeBase.GetComponent<Renderer>().sharedMaterial = whiteMat;
+        Object.DestroyImmediate(eyeBase.GetComponent<Collider>());
+
+        GameObject pupil = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        pupil.name = "Pupil";
+        pupil.transform.SetParent(eyeBase.transform, false);
+        pupil.transform.localPosition = new Vector3(0, 0, 0.35f);
+        pupil.transform.localScale = new Vector3(0.55f, 0.55f, 0.40f);
+        pupil.GetComponent<Renderer>().sharedMaterial = pupilMat;
+        Object.DestroyImmediate(pupil.GetComponent<Collider>());
+    }
+
+    private static void CreatePart(Transform parent, string name, Vector3 pos, Vector3 scale, Material mat)
+    {
+        GameObject part = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        part.name = name;
+        part.transform.SetParent(parent, false);
+        part.transform.localPosition = pos;
+        part.transform.localScale = scale;
+        part.GetComponent<Renderer>().sharedMaterial = mat;
+        Object.DestroyImmediate(part.GetComponent<Collider>());
+    }
+
+    private static Mesh BuildMetaFacialMesh()
     {
         Mesh mesh = new Mesh();
-        mesh.name = "HumanoidHeadMesh";
+        mesh.name = "MetaFacialHeadMesh";
 
-        int lon = 18;
-        int lat = 18;
+        int lon = 20;
+        int lat = 20;
         float radius = 0.14f;
 
         Vector3[] baseVertices = new Vector3[(lon + 1) * lat + 2];
@@ -230,10 +275,11 @@ public static class AvatarMeshGenerator
                 int index = i * (lon + 1) + j + 1;
                 Vector3 v = new Vector3(sin1 * cos2, cos1, sin1 * sin2) * radius;
 
-                // Subtle facial sculpting (Chin & Nose protrusion)
-                if (v.z > 0.05f && v.y < 0.01f)
+                // Sculpt Chin & Cheekbones matching Meta Horizon Avatar proportions
+                if (v.z > 0.04f)
                 {
-                    v.z += 0.02f; // Nose & jaw slope
+                    v.z += 0.015f; // Face slope
+                    if (v.y < -0.03f) v.y *= 1.08f; // Chin lengthen
                 }
                 baseVertices[index] = v;
             }
@@ -271,7 +317,7 @@ public static class AvatarMeshGenerator
         mesh.triangles = triangles;
         mesh.RecalculateNormals();
 
-        // 5 Facial Blendshapes
+        // 5 Facial Viseme Blendshapes
         Vector3[] deltaAa = new Vector3[baseVertices.Length];
         Vector3[] deltaO = new Vector3[baseVertices.Length];
         Vector3[] deltaE = new Vector3[baseVertices.Length];
