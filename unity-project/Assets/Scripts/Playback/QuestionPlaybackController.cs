@@ -45,12 +45,12 @@ public class QuestionPlaybackController : MonoBehaviour
     {
         if (activeAvatarGestureController == null)
         {
-            activeAvatarGestureController = FindObjectOfType<AvatarGestureController>();
+            activeAvatarGestureController = FindAnyObjectByType<AvatarGestureController>();
         }
 
         if (activeAvatarLipSync == null)
         {
-            activeAvatarLipSync = FindObjectOfType<AvatarLipSync>();
+            activeAvatarLipSync = FindAnyObjectByType<AvatarLipSync>();
         }
 
         if (activeAvatarLipSync != null)
@@ -99,6 +99,12 @@ public class QuestionPlaybackController : MonoBehaviour
         }
     }
 
+    public void RestartPlayback()
+    {
+        currentQuestionIndex = -1;
+        AdvanceToNextQuestion();
+    }
+
     public void AdvanceToNextQuestion()
     {
         if (currentManifest == null || currentManifest.questions == null || currentManifest.questions.Count == 0)
@@ -110,10 +116,9 @@ public class QuestionPlaybackController : MonoBehaviour
         currentQuestionIndex++;
         if (currentQuestionIndex >= currentManifest.questions.Count)
         {
-            Debug.Log("[QuestionPlaybackController] Reached end of questions set.");
-            currentQuestionIndex = currentManifest.questions.Count - 1;
+            Debug.Log("[QuestionPlaybackController] Reached end of questions set, looping back to Question 1.");
+            currentQuestionIndex = 0; // Loop back to Question 1
             OnPlaybackFinished?.Invoke();
-            return;
         }
 
         QuestionItemData item = currentManifest.questions[currentQuestionIndex];
