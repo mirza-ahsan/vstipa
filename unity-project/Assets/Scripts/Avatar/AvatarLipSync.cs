@@ -15,11 +15,13 @@ public class AvatarLipSync : MonoBehaviour
     public int visemeAaIndex = -1;
     public int visemeOIndex = -1;
     public int visemeEIndex = -1;
+    public int visemeUIndex = -1;
     public int smileIndex = -1;
 
     private float currentAaWeight = 0f;
     private float currentOWeight = 0f;
     private float currentEWeight = 0f;
+    private float currentUWeight = 0f;
 
     private float[] audioSamples = new float[256];
     private float[] spectrumSamples = new float[256];
@@ -49,6 +51,10 @@ public class AvatarLipSync : MonoBehaviour
                 {
                     visemeEIndex = i;
                 }
+                else if (shapeName.Contains("viseme_u") || shapeName.Contains("u_shape"))
+                {
+                    visemeUIndex = i;
+                }
                 else if (shapeName.Contains("smile"))
                 {
                     smileIndex = i;
@@ -64,6 +70,7 @@ public class AvatarLipSync : MonoBehaviour
         float targetAa = 0f;
         float targetO = 0f;
         float targetE = 0f;
+        float targetU = 0f;
 
         if (audioSource.isPlaying)
         {
@@ -81,29 +88,42 @@ public class AvatarLipSync : MonoBehaviour
             audioSource.GetSpectrumData(spectrumSamples, 0, FFTWindow.BlackmanHarris);
             float lowFreqPower = 0f;  // ~100Hz - 800Hz (aa / open vowel)
             float midFreqPower = 0f;  // ~800Hz - 2500Hz (e / i vowel)
+            float highFreqPower = 0f; // ~2500Hz - 5000Hz (u / rounded vowel)
 
-            for (int i = 1; i < 16; i++) lowFreqPower += spectrumSamples[i];
-            for (int i = 16; i < 48; i++) midFreqPower += spectrumSamples[i];
+            for (int i = 1; i < 12; i++) lowFreqPower += spectrumSamples[i];
+            for (int i = 12; i < 32; i++) midFreqPower += spectrumSamples[i];
+            for (int i = 32; i < 64; i++) highFreqPower += spectrumSamples[i];
 
             targetAa = Mathf.Clamp(rms * sensitivity * 100.0f, 0f, maxBlendWeight);
 
-            if (lowFreqPower > midFreqPower)
+            if (lowFreqPower > midFreqPower && lowFreqPower > highFreqPower)
             {
                 targetO = Mathf.Clamp(lowFreqPower * sensitivity * 200.0f, 0f, maxBlendWeight * 0.7f);
             }
-            else
+            else if (midFreqPower > highFreqPower)
             {
                 targetE = Mathf.Clamp(midFreqPower * sensitivity * 200.0f, 0f, maxBlendWeight * 0.7f);
+            }
+            else
+            {
+                targetU = Mathf.Clamp(highFreqPower * sensitivity * 200.0f, 0f, maxBlendWeight * 0.7f);
+            }
+
+            if (Time.frameCount % 45 == 0)
+            {
+                Debug.Log($"[AvatarLipSync] Real-time FFT LipSync Active: RMS={rms:F4}, viseme_aa={currentAaWeight:F1}, viseme_O={currentOWeight:F1}, viseme_E={currentEWeight:F1}, viseme_U={currentUWeight:F1}");
             }
         }
 
         currentAaWeight = Mathf.Lerp(currentAaWeight, targetAa, Time.deltaTime * smoothing);
         currentOWeight = Mathf.Lerp(currentOWeight, targetO, Time.deltaTime * smoothing);
         currentEWeight = Mathf.Lerp(currentEWeight, targetE, Time.deltaTime * smoothing);
+        currentUWeight = Mathf.Lerp(currentUWeight, targetU, Time.deltaTime * smoothing);
 
         if (visemeAaIndex >= 0) headMeshRenderer.SetBlendShapeWeight(visemeAaIndex, currentAaWeight);
         if (visemeOIndex >= 0) headMeshRenderer.SetBlendShapeWeight(visemeOIndex, currentOWeight);
         if (visemeEIndex >= 0) headMeshRenderer.SetBlendShapeWeight(visemeEIndex, currentEWeight);
+        if (visemeUIndex >= 0) headMeshRenderer.SetBlendShapeWeight(visemeUIndex, currentUWeight);
     }
 
     public void SetPersonaBaselineSmile(float smileWeight)

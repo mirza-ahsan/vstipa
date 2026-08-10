@@ -90,7 +90,7 @@ public static class AvatarMeshGenerator
         Mesh mesh = new Mesh();
         mesh.name = "HumanoidHeadMesh";
 
-        // Head Sphere Geometry (Low-poly 16x16 sphere)
+        // Head Sphere Geometry (Low-poly 14x14 sphere)
         int lon = 14;
         int lat = 14;
         float radius = 0.14f;
@@ -183,7 +183,18 @@ public static class AvatarMeshGenerator
         }
         mesh.AddBlendShapeFrame("viseme_E", 100.0f, deltaE, null, null);
 
-        // Shape 4: mouthSmile (Friendly Smile)
+        // Shape 4: viseme_U (Pucker Mouth)
+        Vector3[] deltaU = new Vector3[baseVertices.Length];
+        for (int i = 0; i < baseVertices.Length; i++)
+        {
+            if (baseVertices[i].y < -0.02f && baseVertices[i].z > 0.02f)
+            {
+                deltaU[i] = new Vector3(-baseVertices[i].x * 0.3f, -0.02f, 0.05f);
+            }
+        }
+        mesh.AddBlendShapeFrame("viseme_U", 100.0f, deltaU, null, null);
+
+        // Shape 5: mouthSmile (Friendly Smile)
         Vector3[] deltaSmile = new Vector3[baseVertices.Length];
         for (int i = 0; i < baseVertices.Length; i++)
         {
