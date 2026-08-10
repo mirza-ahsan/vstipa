@@ -23,6 +23,9 @@ public class QuestionPlaybackController : MonoBehaviour
 
     private void Start()
     {
+        AudioListener.volume = 1.0f;
+        AudioListener.pause = false;
+
         if (audioSource == null)
         {
             audioSource = GetComponent<AudioSource>();
@@ -36,9 +39,26 @@ public class QuestionPlaybackController : MonoBehaviour
         audioSource.loop = false;
         audioSource.volume = 1.0f;
         audioSource.spatialBlend = 0f; // 2D UI stereo playback
+        audioSource.bypassEffects = true;
+        audioSource.bypassListenerEffects = true;
+        audioSource.bypassReverbZones = true;
 
         BindActiveAvatar();
         LoadManifest(selectedPersona);
+    }
+
+    private void OnApplicationFocus(bool hasFocus)
+    {
+        Debug.Log($"[QuestionPlaybackController] OnApplicationFocus: {hasFocus}");
+        if (hasFocus)
+        {
+            AudioListener.pause = false;
+            AudioListener.volume = 1.0f;
+            if (audioSource != null && audioSource.clip != null && !audioSource.isPlaying)
+            {
+                audioSource.Play();
+            }
+        }
     }
 
     public void BindActiveAvatar()
@@ -153,6 +173,8 @@ public class QuestionPlaybackController : MonoBehaviour
                 AudioClip clip = DownloadHandlerAudioClip.GetContent(www);
                 if (clip != null && clip.length > 0)
                 {
+                    AudioListener.pause = false;
+                    AudioListener.volume = 1.0f;
                     audioSource.clip = clip;
                     audioSource.volume = 1.0f;
                     audioSource.Play();

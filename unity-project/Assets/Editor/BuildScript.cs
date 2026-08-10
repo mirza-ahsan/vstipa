@@ -20,6 +20,10 @@ public static class BuildScript
             mainCam.transform.position = new Vector3(0, 1.35f, 0);
             mainCam.clearFlags = CameraClearFlags.SolidColor;
             mainCam.backgroundColor = new Color(0.06f, 0.08f, 0.14f);
+            if (mainCam.GetComponent<AudioListener>() == null)
+            {
+                mainCam.gameObject.AddComponent<AudioListener>();
+            }
         }
 
         // 2. Generate and Instantiate Meta Horizon Style 3D Humanoid Avatar (Beanie, Grey Blazer, White Shirt, Trousers)
