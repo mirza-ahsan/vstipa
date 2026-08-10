@@ -22,13 +22,44 @@ public static class BuildScript
             mainCam.backgroundColor = new Color(0.06f, 0.08f, 0.14f);
         }
 
-        // 2. Generate and Instantiate 3D Humanoid Avatar (Phase 3)
-        GameObject avatarRoot = AvatarMeshGenerator.CreateAvatar("WarmAvatar", new Color(0.18f, 0.52f, 0.65f), new Color(0.92f, 0.78f, 0.68f));
+        // 2. Load 3D Humanoid Avatar GLB Model (Phase 3)
+        GameObject avatarPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Avatars/warm.glb");
+        GameObject avatarRoot;
+
+        if (avatarPrefab != null)
+        {
+            avatarRoot = Object.Instantiate(avatarPrefab);
+            avatarRoot.name = "WarmHumanoidAvatar";
+            Debug.Log("[BuildScript] Loaded real 3D Humanoid Avatar GLB model from Assets/Avatars/warm.glb.");
+        }
+        else
+        {
+            avatarRoot = AvatarMeshGenerator.CreateAvatar("WarmAvatar", new Color(0.18f, 0.52f, 0.65f), new Color(0.92f, 0.78f, 0.68f));
+            Debug.LogWarning("[BuildScript] Assets/Avatars/warm.glb not found, fallback to procedural avatar.");
+        }
+
         avatarRoot.transform.position = new Vector3(-0.40f, 0f, 1.80f); // 1.8m in front, slightly left
         avatarRoot.transform.rotation = Quaternion.Euler(0, 165.0f, 0); // Facing user
 
+        // Ensure Controllers are attached
         AvatarGestureController gestureCtrl = avatarRoot.GetComponent<AvatarGestureController>();
+        if (gestureCtrl == null) gestureCtrl = avatarRoot.AddComponent<AvatarGestureController>();
+
+        SkinnedMeshRenderer headRenderer = avatarRoot.GetComponentInChildren<SkinnedMeshRenderer>();
         AvatarLipSync lipSync = avatarRoot.GetComponent<AvatarLipSync>();
+        if (lipSync == null) lipSync = avatarRoot.AddComponent<AvatarLipSync>();
+        if (headRenderer != null) lipSync.headMeshRenderer = headRenderer;
+
+        // Auto-assign bones for gesture controller
+        Animator animator = avatarRoot.GetComponent<Animator>();
+        if (animator != null && animator.isHuman)
+        {
+            gestureCtrl.headBone = animator.GetBoneTransform(HumanBodyBones.Head);
+            gestureCtrl.spineBone = animator.GetBoneTransform(HumanBodyBones.Spine);
+            gestureCtrl.leftArmBone = animator.GetBoneTransform(HumanBodyBones.LeftUpperArm);
+            gestureCtrl.rightArmBone = animator.GetBoneTransform(HumanBodyBones.RightUpperArm);
+        }
+        gestureCtrl.CacheOriginalRotations();
 
         // 3. Create PlaybackController
         GameObject playbackGo = new GameObject("PlaybackController");
@@ -129,7 +160,7 @@ public static class BuildScript
         statusText.fontSize = 26;
         statusText.alignment = TextAnchor.MiddleCenter;
         statusText.color = Color.lightGray;
-        statusText.text = "Phase 3: 3D Avatar & Real-time Lip-Sync Active";
+        statusText.text = "Phase 3: 3D Humanoid Avatar & Lip-Sync Active";
         statusText.horizontalOverflow = HorizontalWrapMode.Wrap;
         statusText.verticalOverflow = VerticalWrapMode.Overflow;
         RectTransform statusRt = statusTextGo.GetComponent<RectTransform>();
@@ -171,7 +202,7 @@ public static class BuildScript
         string scenePath = "Assets/Scenes/MainScene.unity";
         System.IO.Directory.CreateDirectory("Assets/Scenes");
         UnityEditor.SceneManagement.EditorSceneManager.SaveScene(scene, scenePath);
-        Debug.Log("[BuildScript] Phase 3 MainScene.unity with 3D Avatar & Real-time LipSync configured and saved.");
+        Debug.Log("[BuildScript] Phase 3 MainScene.unity with 3D Humanoid Avatar & LipSync configured and saved.");
     }
 
     public static void BuildAndroid()
