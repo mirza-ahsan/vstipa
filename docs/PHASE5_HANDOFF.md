@@ -1,5 +1,15 @@
 # Phase 5 Recording Handoff
 
+## Quest deployment checkpoint
+
+The standalone Quest environment now builds as an ARM64/IL2CPP OpenXR APK at
+`local-build/android/V-STIPA-Quest.apk`. Unity's Quest configuration validator and
+the targeted V-STIPA EditMode tests pass. The final manifest requires no Internet,
+network-state, microphone, or eye-tracking permission; it retains only OpenXR and
+audio-output support. Run `./scripts/deploy-quest.sh` after waking and reconnecting
+one authorized headset. Physical install, launch, and on-device frame validation
+remain pending whenever `adb devices` is empty.
+
 ## Automated evidence completed
 
 - Unity WebGL build succeeded at `local-build/webgl/` (88,690,881 bytes reported by Unity).

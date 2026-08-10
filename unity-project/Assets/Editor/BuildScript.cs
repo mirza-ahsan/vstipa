@@ -5,15 +5,24 @@ using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
+using UnityEditor.XR.Management;
+using UnityEditor.XR.OpenXR.Features;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.Rendering;
+using UnityEngine.SpatialTracking;
 using UnityEngine.UI;
+using UnityEngine.XR.Management;
+using UnityEngine.XR.OpenXR;
 
 public static class BuildScript
 {
     private const string ScenePath = "Assets/Scenes/MainScene.unity";
     private const string AvatarPath = "Assets/Avatars/male_avatar.glb";
     private const string MaterialDirectory = "Assets/Generated/Materials";
+    private const string XrSettingsDirectory = "Assets/XR/Settings";
+    private const string XrGeneralSettingsPath = XrSettingsDirectory + "/XRGeneralSettingsPerBuildTarget.asset";
+    private const string OpenXrLoaderPath = XrSettingsDirectory + "/OpenXRLoader.asset";
 
     private static readonly Color Navy = Html("#091421");
     private static readonly Color Panel = Html("#122338");
@@ -33,7 +42,8 @@ public static class BuildScript
         Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
         CreateRoom();
-        Camera camera = CreateCamera();
+        bool questTarget = EditorUserBuildSettings.activeBuildTarget == BuildTarget.Android;
+        Camera camera = CreateCamera(questTarget);
         CreateLighting();
 
         GameObject systems = new GameObject("ExperienceSystems");
@@ -68,13 +78,18 @@ public static class BuildScript
         CreateEventSystem();
         CreateInterface(font, controller, personaManager, camera);
 
+        QuestRuntimeAdapter questRuntime = systems.AddComponent<QuestRuntimeAdapter>();
+        questRuntime.headsetCamera = camera;
+        questRuntime.interfaceCanvas = UnityEngine.Object.FindAnyObjectByType<Canvas>();
+        questRuntime.playbackUI = UnityEngine.Object.FindAnyObjectByType<PlaybackUI>();
+
         EditorSceneManager.SaveScene(scene, ScenePath);
         EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
         AssetDatabase.SaveAssets();
         Debug.Log("[BuildScript] MainScene created: interview room, three selectable persona presets, uLipSync routing, and completion flow.");
     }
 
-    private static Camera CreateCamera()
+    private static Camera CreateCamera(bool questTarget)
     {
         GameObject go = new GameObject("Main Camera");
         go.tag = "MainCamera";
@@ -86,6 +101,18 @@ public static class BuildScript
         camera.backgroundColor = Navy;
         camera.nearClipPlane = 0.05f;
         go.AddComponent<AudioListener>();
+
+        if (questTarget)
+        {
+            GameObject origin = new GameObject("XR Origin (Seated)");
+            origin.transform.position = camera.transform.position;
+            origin.transform.rotation = camera.transform.rotation;
+            camera.transform.SetParent(origin.transform, false);
+            camera.transform.localPosition = Vector3.zero;
+            camera.transform.localRotation = Quaternion.identity;
+            TrackedPoseDriver poseDriver = go.AddComponent<TrackedPoseDriver>();
+            poseDriver.SetPoseSource(TrackedPoseDriver.DeviceType.GenericXRDevice, TrackedPoseDriver.TrackedPose.Center);
+        }
         return camera;
     }
 
@@ -252,7 +279,10 @@ public static class BuildScript
             new Vector2(0.36f, 0.40f), new Vector2(0.64f, 0.61f));
         Button sternButton = UIButton("Stern Persona", startCard.transform, font, "3  STERN & CHALLENGING\nDirect prompts and firmer delivery", Stern,
             new Vector2(0.64f, 0.40f), new Vector2(0.92f, 0.61f));
-        UIText("Keyboard Hint", startCard.transform, font, "Click a persona or press 1, 2, or 3  •  Headphones recommended", 20, Muted,
+        string controlsHint = EditorUserBuildSettings.activeBuildTarget == BuildTarget.Android
+            ? "QUEST CONTROLS  •  A / trigger: Warm  •  B: Neutral  •  X or Y: Stern"
+            : "Click a persona or press 1, 2, or 3  •  Headphones recommended";
+        UIText("Controls Hint", startCard.transform, font, controlsHint, 20, Muted,
             TextAnchor.MiddleCenter, new Vector2(0.08f, 0.20f), new Vector2(0.92f, 0.32f));
         UIText("Fallback Notice", startCard.transform, font,
             "Prototype note: persona voice, pacing, gestures, and colour change now; the supplied T1 Avaturn body is reused until distinct facial-rig exports arrive.",
@@ -528,9 +558,14 @@ public static class BuildScript
     [MenuItem("V-STIPA/Build Android")]
     public static void BuildAndroid()
     {
-        SetupMainScene();
         EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Android, BuildTarget.Android);
-        string output = Path.GetFullPath(Path.Combine(Application.dataPath, "../../build.apk"));
+        ConfigureQuestProject();
+        SetupMainScene();
+        ValidateQuestConfiguration();
+
+        string output = GetCommandLineValue("-vstipaOutput") ??
+            Path.GetFullPath(Path.Combine(Application.dataPath, "../../local-build/android/V-STIPA-Quest.apk"));
+        Directory.CreateDirectory(Path.GetDirectoryName(output));
         BuildReport report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
         {
             scenes = new[] { ScenePath },
@@ -539,6 +574,131 @@ public static class BuildScript
             options = BuildOptions.None
         });
         ReportBuild(report, output);
+    }
+
+    [MenuItem("V-STIPA/Configure Quest OpenXR")]
+    public static void ConfigureQuestProject()
+    {
+        Directory.CreateDirectory(XrSettingsDirectory);
+        AssetDatabase.Refresh();
+
+        XRGeneralSettingsPerBuildTarget perTarget =
+            AssetDatabase.LoadAssetAtPath<XRGeneralSettingsPerBuildTarget>(XrGeneralSettingsPath);
+        if (perTarget == null)
+        {
+            perTarget = ScriptableObject.CreateInstance<XRGeneralSettingsPerBuildTarget>();
+            AssetDatabase.CreateAsset(perTarget, XrGeneralSettingsPath);
+        }
+        EditorBuildSettings.AddConfigObject(XRGeneralSettings.k_SettingsKey, perTarget, true);
+
+        if (!perTarget.HasSettingsForBuildTarget(BuildTargetGroup.Android))
+            perTarget.CreateDefaultSettingsForBuildTarget(BuildTargetGroup.Android);
+        if (!perTarget.HasManagerSettingsForBuildTarget(BuildTargetGroup.Android))
+            perTarget.CreateDefaultManagerSettingsForBuildTarget(BuildTargetGroup.Android);
+
+        XRGeneralSettings general = perTarget.SettingsForBuildTarget(BuildTargetGroup.Android);
+        general.InitManagerOnStart = true;
+        XRManagerSettings manager = perTarget.ManagerSettingsForBuildTarget(BuildTargetGroup.Android);
+        OpenXRLoader loader = AssetDatabase.LoadAssetAtPath<OpenXRLoader>(OpenXrLoaderPath);
+        if (loader == null)
+        {
+            loader = ScriptableObject.CreateInstance<OpenXRLoader>();
+            AssetDatabase.CreateAsset(loader, OpenXrLoaderPath);
+        }
+        if (!manager.TrySetLoaders(new List<XRLoader> { loader }))
+            throw new BuildFailedException("Could not assign the Android OpenXR loader.");
+
+        FeatureHelpers.RefreshFeatures(BuildTargetGroup.Android);
+        EnableOpenXrFeature("com.unity.openxr.feature.metaquest", "Meta Quest Support");
+        EnableOpenXrFeature("com.unity.openxr.feature.input.oculustouch", "Oculus Touch Controller Profile");
+        EnableOpenXrFeature("com.unity.openxr.feature.input.metaquestplus", "Meta Quest Touch Plus Controller Profile");
+        EnableOpenXrFeature("com.unity.openxr.feature.compositionlayers", "Composition Layers Support");
+
+        var metaQuestFeature = FeatureHelpers.GetFeatureWithIdForBuildTarget(
+            BuildTargetGroup.Android, "com.unity.openxr.feature.metaquest");
+        var serializedMetaQuest = new SerializedObject(metaQuestFeature);
+        SerializedProperty targetDevices = serializedMetaQuest.FindProperty("targetDevices");
+        for (int i = 0; targetDevices != null && i < targetDevices.arraySize; i++)
+        {
+            SerializedProperty device = targetDevices.GetArrayElementAtIndex(i);
+            string manifestName = device.FindPropertyRelative("manifestName").stringValue;
+            device.FindPropertyRelative("enabled").boolValue =
+                manifestName == "eureka" || manifestName == "quest3s";
+        }
+        serializedMetaQuest.FindProperty("forceRemoveInternetPermission").boolValue = true;
+        serializedMetaQuest.FindProperty("optimizeBufferDiscards").boolValue = false;
+        serializedMetaQuest.ApplyModifiedPropertiesWithoutUndo();
+
+        OpenXRSettings androidOpenXrSettings = OpenXRSettings.GetSettingsForBuildTargetGroup(BuildTargetGroup.Android);
+        androidOpenXrSettings.latencyOptimization = OpenXRSettings.LatencyOptimization.PrioritizeInputPolling;
+        EditorUtility.SetDirty(androidOpenXrSettings);
+
+        PlayerSettings.companyName = "Mirza Ahsan";
+        PlayerSettings.productName = "V-STIPA Interview Simulator";
+        PlayerSettings.bundleVersion = "1.0.0";
+        PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, "com.mirzaahsan.vstipa");
+        PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
+        PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
+        PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel29;
+        PlayerSettings.Android.targetSdkVersion = AndroidSdkVersions.AndroidApiLevelAuto;
+        PlayerSettings.SetGraphicsAPIs(BuildTarget.Android, new[] { GraphicsDeviceType.OpenGLES3 });
+        PlayerSettings.colorSpace = ColorSpace.Linear;
+        PlayerSettings.MTRendering = true;
+
+        EditorUtility.SetDirty(perTarget);
+        EditorUtility.SetDirty(general);
+        EditorUtility.SetDirty(manager);
+        EditorUtility.SetDirty(loader);
+        AssetDatabase.SaveAssets();
+        Debug.Log("[QuestConfig] Android OpenXR configured for Quest: ARM64, IL2CPP, API 29+, OpenGLES3, Meta Quest + Touch profiles.");
+    }
+
+    [MenuItem("V-STIPA/Validate Quest Configuration")]
+    public static void ValidateQuestConfiguration()
+    {
+        var failures = new List<string>();
+        XRGeneralSettings general = XRGeneralSettingsPerBuildTarget.XRGeneralSettingsForBuildTarget(BuildTargetGroup.Android);
+        if (general == null || !general.InitManagerOnStart || general.Manager == null)
+            failures.Add("Android XR General Settings are missing or do not initialize on startup.");
+        else
+        {
+            bool hasOpenXrLoader = false;
+            foreach (XRLoader activeLoader in general.Manager.activeLoaders)
+                if (activeLoader is OpenXRLoader) hasOpenXrLoader = true;
+            if (!hasOpenXrLoader) failures.Add("Android OpenXR loader is not assigned.");
+        }
+
+        ValidateOpenXrFeature("com.unity.openxr.feature.metaquest", "Meta Quest Support", failures);
+        ValidateOpenXrFeature("com.unity.openxr.feature.input.oculustouch", "Oculus Touch", failures);
+        ValidateOpenXrFeature("com.unity.openxr.feature.input.metaquestplus", "Quest Touch Plus", failures);
+        ValidateOpenXrFeature("com.unity.openxr.feature.compositionlayers", "Composition Layers Support", failures);
+
+        if (PlayerSettings.Android.targetArchitectures != AndroidArchitecture.ARM64)
+            failures.Add("Android target architecture must be ARM64 only.");
+        if (PlayerSettings.GetScriptingBackend(NamedBuildTarget.Android) != ScriptingImplementation.IL2CPP)
+            failures.Add("Android scripting backend must be IL2CPP.");
+        if (UnityEngine.Object.FindAnyObjectByType<QuestRuntimeAdapter>() == null)
+            failures.Add("QuestRuntimeAdapter is missing from MainScene.");
+        if (Camera.main == null || Camera.main.GetComponent<TrackedPoseDriver>() == null)
+            failures.Add("The main camera is not configured for headset pose tracking.");
+
+        if (failures.Count > 0)
+            throw new BuildFailedException("Quest validation failed:\n- " + string.Join("\n- ", failures));
+        Debug.Log("[QuestConfig] VALIDATION PASS: OpenXR startup, Meta Quest support, Touch/Touch Plus input, tracked camera, ARM64 and IL2CPP are configured.");
+    }
+
+    private static void EnableOpenXrFeature(string featureId, string displayName)
+    {
+        var feature = FeatureHelpers.GetFeatureWithIdForBuildTarget(BuildTargetGroup.Android, featureId);
+        if (feature == null) throw new BuildFailedException($"OpenXR feature not found: {displayName} ({featureId}).");
+        feature.enabled = true;
+        EditorUtility.SetDirty(feature);
+    }
+
+    private static void ValidateOpenXrFeature(string featureId, string displayName, List<string> failures)
+    {
+        var feature = FeatureHelpers.GetFeatureWithIdForBuildTarget(BuildTargetGroup.Android, featureId);
+        if (feature == null || !feature.enabled) failures.Add($"{displayName} OpenXR feature is not enabled.");
     }
 
     private static void ReportBuild(BuildReport report, string output)

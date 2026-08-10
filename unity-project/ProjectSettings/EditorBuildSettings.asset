@@ -10,3 +10,5 @@ EditorBuildSettings:
     guid: 6ca1de91a51762ceeb444ef0ac635709
   m_configObjects:
     com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}
+    com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 9fee87a9087703a6f8ab5c3371273f4e, type: 2}
+    com.unity.xr.openxr.settings4: {fileID: 11400000, guid: 9991465ea35275c399c1e044d9bdcd92, type: 2}

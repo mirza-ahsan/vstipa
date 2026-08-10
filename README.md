@@ -141,8 +141,24 @@ For the recorded browser fallback, use **V-STIPA → Build WebGL** in Unity, the
 python -m http.server 8000 --directory local-build/webgl
 ```
 
-Open <http://127.0.0.1:8000/>. For an optional connected-Quest build, use
-**V-STIPA → Build Android** and `adb install -r build.apk`.
+Open <http://127.0.0.1:8000/>. For a Quest build, use **V-STIPA → Build Android**.
+The build command configures OpenXR for Android, generates the tracked seated camera
+and headset UI, validates the Quest settings, and writes:
+
+```text
+local-build/android/V-STIPA-Quest.apk
+```
+
+Wake and connect one authorized Quest, then install and launch it with:
+
+```bash
+./scripts/deploy-quest.sh
+```
+
+Quest controls are intentionally deterministic: **A/right trigger** selects Warm or
+advances, **B** selects Neutral or returns to the persona menu, and **X/Y** selects
+Stern. The APK contains the room, avatar, question manifests, and PCM voice audio;
+no separate environment package or runtime server is required.
 
 ---
 
