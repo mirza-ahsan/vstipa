@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using System.IO;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -9,6 +8,10 @@ public class QuestionPlaybackController : MonoBehaviour
     [Header("Configuration")]
     public string selectedPersona = "warm";
     public AudioSource audioSource;
+
+    [Header("Avatar Components")]
+    public AvatarGestureController activeAvatarGestureController;
+    public AvatarLipSync activeAvatarLipSync;
 
     [Header("State")]
     public PersonaManifestData currentManifest;
@@ -34,7 +37,26 @@ public class QuestionPlaybackController : MonoBehaviour
         audioSource.volume = 1.0f;
         audioSource.spatialBlend = 0f; // 2D UI stereo playback
 
+        BindActiveAvatar();
         LoadManifest(selectedPersona);
+    }
+
+    public void BindActiveAvatar()
+    {
+        if (activeAvatarGestureController == null)
+        {
+            activeAvatarGestureController = FindObjectOfType<AvatarGestureController>();
+        }
+
+        if (activeAvatarLipSync == null)
+        {
+            activeAvatarLipSync = FindObjectOfType<AvatarLipSync>();
+        }
+
+        if (activeAvatarLipSync != null)
+        {
+            activeAvatarLipSync.audioSource = audioSource;
+        }
     }
 
     public void LoadManifest(string persona)
@@ -96,6 +118,14 @@ public class QuestionPlaybackController : MonoBehaviour
 
         QuestionItemData item = currentManifest.questions[currentQuestionIndex];
         OnQuestionChanged?.Invoke(item);
+
+        // Trigger Avatar Gesture Animation
+        if (activeAvatarGestureController != null && !string.IsNullOrEmpty(item.gesture))
+        {
+            activeAvatarGestureController.TriggerGesture(item.gesture);
+            Debug.Log($"[QuestionPlaybackController] Triggered Avatar Gesture: '{item.gesture}' for Q{item.id:02d}");
+        }
+
         StartCoroutine(PlayQuestionAudioCoroutine(item));
     }
 

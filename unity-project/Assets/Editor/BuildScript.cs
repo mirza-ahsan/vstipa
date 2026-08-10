@@ -13,7 +13,7 @@ public static class BuildScript
             UnityEditor.SceneManagement.NewSceneSetup.DefaultGameObjects,
             UnityEditor.SceneManagement.NewSceneMode.Single);
 
-        // 1. Position Main Camera for comfortable VR viewing (1.35m height)
+        // 1. Position Main Camera for VR (1.35m eye level)
         Camera mainCam = Camera.main;
         if (mainCam != null)
         {
@@ -22,7 +22,15 @@ public static class BuildScript
             mainCam.backgroundColor = new Color(0.06f, 0.08f, 0.14f);
         }
 
-        // 2. Create PlaybackController
+        // 2. Generate and Instantiate 3D Humanoid Avatar (Phase 3)
+        GameObject avatarRoot = AvatarMeshGenerator.CreateAvatar("WarmAvatar", new Color(0.18f, 0.52f, 0.65f), new Color(0.92f, 0.78f, 0.68f));
+        avatarRoot.transform.position = new Vector3(-0.40f, 0f, 1.80f); // 1.8m in front, slightly left
+        avatarRoot.transform.rotation = Quaternion.Euler(0, 165.0f, 0); // Facing user
+
+        AvatarGestureController gestureCtrl = avatarRoot.GetComponent<AvatarGestureController>();
+        AvatarLipSync lipSync = avatarRoot.GetComponent<AvatarLipSync>();
+
+        // 3. Create PlaybackController
         GameObject playbackGo = new GameObject("PlaybackController");
         QuestionPlaybackController controller = playbackGo.AddComponent<QuestionPlaybackController>();
         controller.selectedPersona = "warm";
@@ -30,12 +38,16 @@ public static class BuildScript
         audioSource.spatialBlend = 0f; // Crisp 2D UI stereo sound
         controller.audioSource = audioSource;
 
-        // 3. Create EventSystem
+        controller.activeAvatarGestureController = gestureCtrl;
+        controller.activeAvatarLipSync = lipSync;
+        lipSync.audioSource = audioSource;
+
+        // 4. Create EventSystem
         GameObject eventSystemGo = new GameObject("EventSystem");
         eventSystemGo.AddComponent<EventSystem>();
         eventSystemGo.AddComponent<StandaloneInputModule>();
 
-        // 4. Create WorldSpace UI Canvas Calibrated for Meta Quest VR (1.2m Distance, 1.0m Width)
+        // 5. Create WorldSpace UI Canvas Calibrated for Meta Quest VR (Side Panel)
         GameObject canvasGo = new GameObject("Canvas");
         Canvas canvas = canvasGo.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.WorldSpace;
@@ -47,9 +59,10 @@ public static class BuildScript
         canvasGo.AddComponent<GraphicRaycaster>();
 
         RectTransform canvasRt = canvasGo.GetComponent<RectTransform>();
-        canvasRt.position = new Vector3(0, 1.35f, 1.2f); // 1.2m directly in front of camera
-        canvasRt.sizeDelta = new Vector2(1000, 700);
-        canvasRt.localScale = new Vector3(0.001f, 0.001f, 0.001f); // 1.0m x 0.7m physical size in VR
+        canvasRt.position = new Vector3(0.45f, 1.35f, 1.80f); // 1.8m in front, slightly right
+        canvasRt.rotation = Quaternion.Euler(0, -15.0f, 0); // Angled slightly inward
+        canvasRt.sizeDelta = new Vector2(900, 700);
+        canvasRt.localScale = new Vector3(0.001f, 0.001f, 0.001f);
 
         // Background Panel
         GameObject panelGo = new GameObject("Panel");
@@ -76,7 +89,7 @@ public static class BuildScript
         personaTitleText.verticalOverflow = VerticalWrapMode.Overflow;
         RectTransform personaRt = personaTextGo.GetComponent<RectTransform>();
         personaRt.anchoredPosition = new Vector3(0, 260, 0);
-        personaRt.sizeDelta = new Vector2(900, 60);
+        personaRt.sizeDelta = new Vector2(820, 60);
 
         // Question Progress Text
         GameObject progressTextGo = new GameObject("QuestionProgressText");
@@ -86,12 +99,12 @@ public static class BuildScript
         questionProgressText.fontSize = 32;
         questionProgressText.alignment = TextAnchor.MiddleCenter;
         questionProgressText.color = Color.white;
-        questionProgressText.text = "Press Any Quest Controller Button or Trigger to Begin";
+        questionProgressText.text = "Question 1 / 12";
         questionProgressText.horizontalOverflow = HorizontalWrapMode.Wrap;
         questionProgressText.verticalOverflow = VerticalWrapMode.Overflow;
         RectTransform progressRt = progressTextGo.GetComponent<RectTransform>();
         progressRt.anchoredPosition = new Vector3(0, 190, 0);
-        progressRt.sizeDelta = new Vector2(900, 50);
+        progressRt.sizeDelta = new Vector2(820, 50);
 
         // Question Content Text
         GameObject contentTextGo = new GameObject("QuestionContentText");
@@ -101,12 +114,12 @@ public static class BuildScript
         questionContentText.fontSize = 36;
         questionContentText.alignment = TextAnchor.MiddleCenter;
         questionContentText.color = new Color(1.0f, 0.95f, 0.70f);
-        questionContentText.text = "\"Welcome to V-STIPA VR Training Simulation.\"\n(Press Quest Controller Trigger or Button A/B/X/Y to advance questions)";
+        questionContentText.text = "\"Welcome! To start off, could you tell me about a project you are particularly proud of?\"";
         questionContentText.horizontalOverflow = HorizontalWrapMode.Wrap;
         questionContentText.verticalOverflow = VerticalWrapMode.Overflow;
         RectTransform contentRt = contentTextGo.GetComponent<RectTransform>();
         contentRt.anchoredPosition = new Vector3(0, 30, 0);
-        contentRt.sizeDelta = new Vector2(920, 220);
+        contentRt.sizeDelta = new Vector2(840, 220);
 
         // Status Text
         GameObject statusTextGo = new GameObject("StatusText");
@@ -116,12 +129,12 @@ public static class BuildScript
         statusText.fontSize = 26;
         statusText.alignment = TextAnchor.MiddleCenter;
         statusText.color = Color.lightGray;
-        statusText.text = "Offline Playback Mode (Airplane Mode Tested)";
+        statusText.text = "Phase 3: 3D Avatar & Real-time Lip-Sync Active";
         statusText.horizontalOverflow = HorizontalWrapMode.Wrap;
         statusText.verticalOverflow = VerticalWrapMode.Overflow;
         RectTransform statusRt = statusTextGo.GetComponent<RectTransform>();
         statusRt.anchoredPosition = new Vector3(0, -140, 0);
-        statusRt.sizeDelta = new Vector2(900, 40);
+        statusRt.sizeDelta = new Vector2(820, 40);
 
         // Next Question Button
         GameObject buttonGo = new GameObject("NextButton");
@@ -131,7 +144,7 @@ public static class BuildScript
         Button btn = buttonGo.AddComponent<Button>();
         RectTransform btnRt = buttonGo.GetComponent<RectTransform>();
         btnRt.anchoredPosition = new Vector3(0, -230, 0);
-        btnRt.sizeDelta = new Vector2(380, 85);
+        btnRt.sizeDelta = new Vector2(360, 85);
 
         GameObject btnTextGo = new GameObject("BtnText");
         btnTextGo.transform.SetParent(buttonGo.transform, false);
@@ -158,7 +171,7 @@ public static class BuildScript
         string scenePath = "Assets/Scenes/MainScene.unity";
         System.IO.Directory.CreateDirectory("Assets/Scenes");
         UnityEditor.SceneManagement.EditorSceneManager.SaveScene(scene, scenePath);
-        Debug.Log("[BuildScript] Calibrated Meta Quest VR MainScene.unity configured and saved successfully.");
+        Debug.Log("[BuildScript] Phase 3 MainScene.unity with 3D Avatar & Real-time LipSync configured and saved.");
     }
 
     public static void BuildAndroid()
