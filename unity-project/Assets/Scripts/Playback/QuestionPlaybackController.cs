@@ -14,7 +14,7 @@ public class QuestionPlaybackController : MonoBehaviour
     public bool autoStartOnManifestLoad = true;
     public bool enableRoleBasedQuestions = true;
     public string roleInterviewApiUrl = "http://127.0.0.1:8001/api/interviews";
-    public int liveRequestTimeoutSeconds = 35;
+    public int liveRequestTimeoutSeconds = 75;
 
     [Header("Avatar Components")]
     public AvatarGestureController activeAvatarGestureController;

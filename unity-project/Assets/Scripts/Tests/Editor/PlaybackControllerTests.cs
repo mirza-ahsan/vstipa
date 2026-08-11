@@ -119,6 +119,16 @@ public class PlaybackControllerTests
     }
 
     [Test]
+    public void TestLiveGenerationTimeoutAllowsFreeRouterLatency()
+    {
+        GameObject go = new GameObject("TestLiveTimeout");
+        QuestionPlaybackController controller = go.AddComponent<QuestionPlaybackController>();
+
+        Assert.That(controller.liveRequestTimeoutSeconds, Is.GreaterThanOrEqualTo(60));
+        Object.DestroyImmediate(go);
+    }
+
+    [Test]
     public void TestSeatedPoseBindsAndBendsBothLegs()
     {
         GameObject avatar = new GameObject("Avatar");
