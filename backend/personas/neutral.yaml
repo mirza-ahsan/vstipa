@@ -1,7 +1,7 @@
 persona_id: neutral
 name: "Neutral & Professional Interviewer"
 description: "Balanced, objective, and standard interviewer. Covers core behavioral and technical competencies."
-tts_voice_name: "en-US-Wavenet-C"
+tts_voice_name: "en-US-Wavenet-A"
 speaking_rate: 1.0
 pitch: 0.0
 system_prompt: >

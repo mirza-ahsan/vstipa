@@ -130,8 +130,10 @@ uv run render_audio.py           # calls Cloud TTS, writes PCM WAV + manifest
 Copy the output into `unity-project/Assets/StreamingAssets/questions/` if the script
 doesn't already write there directly.
 
-`generate_offline_assets.py` also needs `ffmpeg` on `PATH` to convert gTTS output to
-24 kHz mono PCM WAV files that WebGL and uLipSync can sample reliably.
+`generate_offline_assets.py` uses persona-matched male Edge neural voices and also
+needs `ffmpeg` on `PATH` to convert the generated audio to 24 kHz mono PCM WAV files
+that WebGL and uLipSync can sample reliably. This remains a generation-stage tool;
+the deployed Unity application only loads the baked clips.
 
 ### 8. Build & deploy
 For the recorded browser fallback, use **V-STIPA → Build WebGL** in Unity, then serve

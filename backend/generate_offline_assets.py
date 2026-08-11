@@ -1,12 +1,17 @@
+import asyncio
 import json
 import subprocess
 from pathlib import Path
-from gtts import gTTS
+
+import edge_tts
 
 PERSONAS = {
     "warm": {
         "name": "Warm & Encouraging Interviewer",
         "tone": "warm",
+        "voice": "en-US-AndrewNeural",
+        "rate": "-5%",
+        "pitch": "+2Hz",
         "gestures": ["nod", "lean_forward", "smile", "idle", "thinking"],
         "questions": [
             "Welcome! To start off, could you tell me about a project you are particularly proud of?",
@@ -26,6 +31,9 @@ PERSONAS = {
     "stern": {
         "name": "Stern & Challenging Interviewer",
         "tone": "stern",
+        "voice": "en-US-ChristopherNeural",
+        "rate": "+5%",
+        "pitch": "-4Hz",
         "gestures": ["arms_crossed", "lean_back", "nod_firm", "idle", "thinking"],
         "questions": [
             "We have strict performance constraints. Describe a production incident you directly caused or resolved.",
@@ -45,6 +53,9 @@ PERSONAS = {
     "neutral": {
         "name": "Neutral & Professional Interviewer",
         "tone": "neutral",
+        "voice": "en-US-EricNeural",
+        "rate": "+0%",
+        "pitch": "+0Hz",
         "gestures": ["nod", "idle", "thinking", "lean_forward"],
         "questions": [
             "Please walk me through your background and key technical areas of expertise.",
@@ -63,7 +74,25 @@ PERSONAS = {
     }
 }
 
-def generate_baked_content():
+async def synthesize_to_mp3(text: str, voice: str, rate: str, pitch: str, output_path: Path):
+    """Render one clip with bounded retries before touching the committed asset."""
+    temporary_path = output_path.with_suffix(".source.mp3")
+    temporary_path.unlink(missing_ok=True)
+
+    for attempt in range(1, 4):
+        try:
+            communicate = edge_tts.Communicate(text, voice, rate=rate, pitch=pitch)
+            await communicate.save(str(temporary_path))
+            temporary_path.replace(output_path)
+            return
+        except Exception:
+            temporary_path.unlink(missing_ok=True)
+            if attempt == 3:
+                raise
+            await asyncio.sleep(attempt * 1.5)
+
+
+async def generate_baked_content():
     backend_dir = Path(__file__).parent
     output_dir = backend_dir / "output"
     streaming_base = backend_dir.parent / "unity-project" / "Assets" / "StreamingAssets" / "questions"
@@ -83,7 +112,8 @@ def generate_baked_content():
             gesture = gestures[(idx - 1) % len(gestures)]
             audio_filename = f"q{idx:02d}.wav"
             audio_path = persona_streaming_dir / audio_filename
-            temporary_mp3 = persona_streaming_dir / f"q{idx:02d}.source.mp3"
+            mp3_path = persona_streaming_dir / f"q{idx:02d}.mp3"
+            temporary_wav = persona_streaming_dir / f"q{idx:02d}.source.wav"
 
             q_items.append({
                 "question": q_text,
@@ -91,17 +121,25 @@ def generate_baked_content():
                 "gesture": gesture
             })
 
-            print(f"[{persona_id}] Synthesizing spoken voice for Q{idx:02d}...")
-            tts = gTTS(text=q_text, lang='en', slow=False)
-            tts.save(str(temporary_mp3))
+            print(
+                f"[{persona_id}] Synthesizing male voice {pdata['voice']} "
+                f"for Q{idx:02d}..."
+            )
+            await synthesize_to_mp3(
+                q_text,
+                pdata["voice"],
+                pdata["rate"],
+                pdata["pitch"],
+                mp3_path,
+            )
             subprocess.run(
                 [
-                    "ffmpeg", "-y", "-loglevel", "error", "-i", str(temporary_mp3),
-                    "-ac", "1", "-ar", "24000", "-c:a", "pcm_s16le", str(audio_path)
+                    "ffmpeg", "-y", "-loglevel", "error", "-i", str(mp3_path),
+                    "-ac", "1", "-ar", "24000", "-c:a", "pcm_s16le", str(temporary_wav)
                 ],
                 check=True
             )
-            temporary_mp3.unlink()
+            temporary_wav.replace(audio_path)
 
             manifest_entries.append({
                 "id": idx,
@@ -129,4 +167,4 @@ def generate_baked_content():
         print(f"Generated spoken voice assets for persona [{persona_id}]: {len(manifest_entries)} questions in {persona_streaming_dir}")
 
 if __name__ == "__main__":
-    generate_baked_content()
+    asyncio.run(generate_baked_content())

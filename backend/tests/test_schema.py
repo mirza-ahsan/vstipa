@@ -1,6 +1,7 @@
 import pytest
 import yaml
 from pathlib import Path
+from generate_offline_assets import PERSONAS
 from generate_questions import QuestionItem, QuestionList
 
 def test_persona_yaml_validity():
@@ -18,6 +19,17 @@ def test_persona_yaml_validity():
             assert "system_prompt" in data
             assert "tts_voice_name" in data
 
+            # Google Cloud's published en-US WaveNet catalogue identifies these
+            # five voices as male. Keep the baked fallback aligned with the male
+            # interviewer avatar if persona settings change later.
+            assert data["tts_voice_name"] in {
+                "en-US-Wavenet-A",
+                "en-US-Wavenet-B",
+                "en-US-Wavenet-D",
+                "en-US-Wavenet-I",
+                "en-US-Wavenet-J",
+            }
+
 def test_question_schema_validation():
     valid_data = {
         "questions": [
@@ -32,6 +44,14 @@ def test_question_schema_validation():
     q_list = QuestionList.model_validate(valid_data)
     assert len(q_list.questions) == 12
     assert q_list.questions[0].gesture == "nod"
+
+
+def test_offline_fallback_uses_male_neural_voices():
+    assert {persona["voice"] for persona in PERSONAS.values()} == {
+        "en-US-AndrewNeural",
+        "en-US-ChristopherNeural",
+        "en-US-EricNeural",
+    }
 
 def test_invalid_question_schema():
     invalid_data = {
