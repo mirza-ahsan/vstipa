@@ -235,11 +235,17 @@ public static class BuildScript
         }
 
         avatar.name = $"{displayName} Avatar (T1 Fallback)";
-        // Lower the standing fallback into the executive chair so it reads as a
-        // seated interviewer while preserving the native rig and idle animation.
-        avatar.transform.position = new Vector3(-0.63f, -0.48f, 1.10f);
+        // Align the source hips with the chair cushion. SeatedInterviewerPose bends
+        // the animated legs after the native idle is evaluated, so the avatar is
+        // genuinely seated rather than merely lowered behind the desk.
+        avatar.transform.position = new Vector3(-0.63f, -0.73f, 1.33f);
         avatar.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
         avatar.transform.localScale = Vector3.one * 1.35f;
+
+        SeatedInterviewerPose seatedPose = avatar.AddComponent<SeatedInterviewerPose>();
+        seatedPose.upperLegPitch = 80f;
+        seatedPose.lowerLegPitch = -80f;
+        seatedPose.legSpread = 2.5f;
 
         HumanoidAvatarConfigurator humanoid = avatar.AddComponent<HumanoidAvatarConfigurator>();
         humanoid.animator = avatar.GetComponentInChildren<Animator>(true);
@@ -681,6 +687,9 @@ public static class BuildScript
 
                 if (slot.lipSync.mouthProxy == null)
                     failures.Add($"{slot.persona} has neither a verified facial rig nor a mouth fallback assigned.");
+                SeatedInterviewerPose seatedPose = slot.avatarRoot.GetComponent<SeatedInterviewerPose>();
+                if (seatedPose == null || !seatedPose.BindRig())
+                    failures.Add($"{slot.persona} is not bound to the professional seated pose.");
 
                 foreach (SkinnedMeshRenderer renderer in slot.avatarRoot.GetComponentsInChildren<SkinnedMeshRenderer>(true))
                 {

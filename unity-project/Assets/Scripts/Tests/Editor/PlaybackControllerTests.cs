@@ -119,6 +119,27 @@ public class PlaybackControllerTests
     }
 
     [Test]
+    public void TestSeatedPoseBindsAndBendsBothLegs()
+    {
+        GameObject avatar = new GameObject("Avatar");
+        Transform hips = Child(avatar.transform, "Hips");
+        Transform leftUpperLeg = Child(hips, "LeftUpLeg");
+        Transform leftLowerLeg = Child(leftUpperLeg, "LeftLeg");
+        Transform rightUpperLeg = Child(hips, "RightUpLeg");
+        Transform rightLowerLeg = Child(rightUpperLeg, "RightLeg");
+        SeatedInterviewerPose pose = avatar.AddComponent<SeatedInterviewerPose>();
+
+        Assert.IsTrue(pose.BindRig());
+        pose.ApplySeatedPose();
+
+        Assert.That(Quaternion.Angle(Quaternion.identity, leftUpperLeg.localRotation), Is.GreaterThan(70f));
+        Assert.That(Quaternion.Angle(Quaternion.identity, rightUpperLeg.localRotation), Is.GreaterThan(70f));
+        Assert.That(Quaternion.Angle(Quaternion.identity, leftLowerLeg.localRotation), Is.GreaterThan(70f));
+        Assert.That(Quaternion.Angle(Quaternion.identity, rightLowerLeg.localRotation), Is.GreaterThan(70f));
+        Object.DestroyImmediate(avatar);
+    }
+
+    [Test]
     public void TestQuestManifestPreservesLiveBackendInternetOnly()
     {
         string tempDirectory = Path.Combine(Path.GetTempPath(), $"vstipa-manifest-{Guid.NewGuid():N}");
@@ -145,5 +166,12 @@ public class PlaybackControllerTests
         {
             Directory.Delete(tempDirectory, true);
         }
+    }
+
+    private static Transform Child(Transform parent, string name)
+    {
+        GameObject child = new GameObject(name);
+        child.transform.SetParent(parent, false);
+        return child.transform;
     }
 }
