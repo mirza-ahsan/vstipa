@@ -49,5 +49,7 @@ Each phase has strict completion criteria. A phase cannot be marked done in `REA
 
 ## Phase 6 — Live-Mode Stretch Feature (Optional)
 - **Verification:**
-  - USB tethered live API call succeeds within 3s.
-  - Pulling tether cable mid-request silently falls back to offline baked question.
+  - A user-entered target role produces exactly 12 relevant, schema-valid questions.
+  - The OpenRouter key remains server-side and absent from Unity/WebGL/APK artifacts.
+  - Live male PCM audio plays through the existing lip-sync path.
+  - Missing credentials/network and a pulled tether silently fall back to baked questions.

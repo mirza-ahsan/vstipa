@@ -11,6 +11,8 @@ public class PlaybackUI : MonoBehaviour
     public Text questionProgressText;
     public Text questionContentText;
     public Text statusText;
+    public Text startStatusText;
+    public InputField targetRoleInput;
 
     [Header("Buttons")]
     public Button nextButton;
@@ -41,6 +43,7 @@ public class PlaybackUI : MonoBehaviour
         {
             playbackController.OnQuestionChanged += HandleQuestionChanged;
             playbackController.OnPlaybackFinished += HandlePlaybackFinished;
+            playbackController.OnStatusChanged += HandleStatusChanged;
         }
 
         if (nextButton != null)
@@ -74,8 +77,8 @@ public class PlaybackUI : MonoBehaviour
         if (startPanel != null && startPanel.activeSelf)
         {
             if (Input.GetKeyDown(KeyCode.Alpha1)) SelectPersona("warm");
-            if (Input.GetKeyDown(KeyCode.Alpha2)) SelectPersona("stern");
-            if (Input.GetKeyDown(KeyCode.Alpha3)) SelectPersona("neutral");
+            if (Input.GetKeyDown(KeyCode.Alpha2)) SelectPersona("neutral");
+            if (Input.GetKeyDown(KeyCode.Alpha3)) SelectPersona("stern");
             return;
         }
 
@@ -89,7 +92,13 @@ public class PlaybackUI : MonoBehaviour
 
     public void SelectPersona(string persona)
     {
-        if (personaManager == null || !personaManager.SelectPersona(persona)) return;
+        string role = targetRoleInput?.text?.Trim();
+        if (string.IsNullOrEmpty(role))
+        {
+            if (startStatusText != null) startStatusText.text = "Enter the role or position you want to practise for.";
+            return;
+        }
+        if (personaManager == null || !personaManager.SelectPersona(persona, role)) return;
         PersonaManager.PersonaSlot slot = personaManager.GetActiveSlot();
         if (slot != null)
         {
@@ -108,6 +117,7 @@ public class PlaybackUI : MonoBehaviour
         startPanel?.SetActive(true);
         interviewPanel?.SetActive(false);
         completionPanel?.SetActive(false);
+        if (startStatusText != null) startStatusText.text = "Enter a target role, then choose an interviewer style.";
     }
 
     public void RestartInterview()
@@ -145,7 +155,12 @@ public class PlaybackUI : MonoBehaviour
 
         if (statusText != null)
         {
-            statusText.text = $"{item.tone.ToUpperInvariant()}  •  {item.gesture.Replace('_', ' ')}";
+            string role = playbackController.currentManifest?.role;
+            string roleSuffix = string.IsNullOrEmpty(role) ? string.Empty : $"  •  {role.ToUpperInvariant()}";
+            string source = playbackController.currentManifest?.source;
+            string mode = source == "openrouter" ? "AI-GENERATED" :
+                source == "baked_fallback" ? "BAKED FALLBACK" : "BAKED";
+            statusText.text = $"{mode}  •  {item.tone.ToUpperInvariant()}  •  {item.gesture.Replace('_', ' ')}{roleSuffix}";
         }
 
         if (nextButton != null)
@@ -163,5 +178,10 @@ public class PlaybackUI : MonoBehaviour
         completionPanel?.SetActive(true);
         if (completionSummaryText != null)
             completionSummaryText.text = $"You completed {playbackController.currentManifest?.total_questions ?? 0} questions with the {playbackController.currentManifest?.persona_name ?? "selected"} persona.";
+    }
+
+    private void HandleStatusChanged(string message)
+    {
+        if (statusText != null) statusText.text = message;
     }
 }

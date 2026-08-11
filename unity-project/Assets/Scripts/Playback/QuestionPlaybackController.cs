@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Text;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -11,6 +12,9 @@ public class QuestionPlaybackController : MonoBehaviour
     public float audioGainMultiplier = 3.5f;
     public bool loadOnStart = true;
     public bool autoStartOnManifestLoad = true;
+    public bool enableRoleBasedQuestions = true;
+    public string roleInterviewApiUrl = "http://127.0.0.1:8001/api/interviews";
+    public int liveRequestTimeoutSeconds = 35;
 
     [Header("Avatar Components")]
     public AvatarGestureController activeAvatarGestureController;
@@ -20,10 +24,13 @@ public class QuestionPlaybackController : MonoBehaviour
     public PersonaManifestData currentManifest;
     public int currentQuestionIndex = -1;
     public bool isPlaying = false;
+    public bool usingLiveQuestions = false;
+    public string targetRole = string.Empty;
 
     public event Action<QuestionItemData> OnQuestionChanged;
     public event Action OnPlaybackFinished;
     public event Action<PersonaManifestData> OnManifestLoaded;
+    public event Action<string> OnStatusChanged;
 
     private Coroutine manifestLoadCoroutine;
     private Coroutine audioLoadCoroutine;
@@ -90,12 +97,35 @@ public class QuestionPlaybackController : MonoBehaviour
     {
         StopPlayback();
         selectedPersona = persona;
+        targetRole = string.Empty;
+        usingLiveQuestions = false;
         currentQuestionIndex = -1;
         currentManifest = null;
 
         string manifestUrl = GetStreamingAssetsUrl($"questions/{selectedPersona}/manifest.json");
         if (manifestLoadCoroutine != null) StopCoroutine(manifestLoadCoroutine);
-        manifestLoadCoroutine = StartCoroutine(LoadManifestCoroutine(manifestUrl));
+        manifestLoadCoroutine = StartCoroutine(LoadManifestCoroutine(manifestUrl, false));
+    }
+
+    public void LoadRoleBasedManifest(string persona, string role)
+    {
+        string normalizedRole = role?.Trim();
+        if (!enableRoleBasedQuestions || string.IsNullOrEmpty(normalizedRole))
+        {
+            LoadManifest(persona);
+            return;
+        }
+
+        StopPlayback();
+        selectedPersona = persona;
+        targetRole = normalizedRole;
+        usingLiveQuestions = false;
+        currentQuestionIndex = -1;
+        currentManifest = null;
+
+        if (manifestLoadCoroutine != null) StopCoroutine(manifestLoadCoroutine);
+        OnStatusChanged?.Invoke($"Generating a {targetRole} interview...");
+        manifestLoadCoroutine = StartCoroutine(LoadRoleBasedManifestCoroutine());
     }
 
     private string GetStreamingAssetsUrl(string relativePath)
@@ -112,7 +142,60 @@ public class QuestionPlaybackController : MonoBehaviour
         return combined;
     }
 
-    private IEnumerator LoadManifestCoroutine(string url)
+    private IEnumerator LoadRoleBasedManifestCoroutine()
+    {
+        RoleInterviewRequestData requestData = new RoleInterviewRequestData
+        {
+            role = targetRole,
+            persona = selectedPersona
+        };
+        byte[] requestBody = Encoding.UTF8.GetBytes(JsonUtility.ToJson(requestData));
+
+        using (UnityWebRequest www = new UnityWebRequest(roleInterviewApiUrl, UnityWebRequest.kHttpVerbPOST))
+        {
+            www.uploadHandler = new UploadHandlerRaw(requestBody);
+            www.downloadHandler = new DownloadHandlerBuffer();
+            www.SetRequestHeader("Content-Type", "application/json");
+            www.timeout = Mathf.Max(5, liveRequestTimeoutSeconds);
+            yield return www.SendWebRequest();
+
+            if (www.result == UnityWebRequest.Result.Success)
+            {
+                PersonaManifestData manifest = JsonUtility.FromJson<PersonaManifestData>(www.downloadHandler.text);
+                if (IsUsableManifest(manifest))
+                {
+                    currentManifest = manifest;
+                    usingLiveQuestions = true;
+                    Debug.Log($"[QuestionPlaybackController] Loaded {manifest.total_questions} role-based questions for '{manifest.role}' via {manifest.model}.");
+                    OnStatusChanged?.Invoke($"AI-GENERATED  •  {manifest.role.ToUpperInvariant()}");
+                    OnManifestLoaded?.Invoke(currentManifest);
+                    manifestLoadCoroutine = null;
+                    if (autoStartOnManifestLoad) AdvanceToNextQuestion();
+                    yield break;
+                }
+            }
+
+            Debug.LogWarning($"[QuestionPlaybackController] Live role interview unavailable ({www.responseCode}: {www.error}). Falling back to baked {selectedPersona} questions.");
+        }
+
+        usingLiveQuestions = false;
+        OnStatusChanged?.Invoke("LIVE GENERATION UNAVAILABLE  •  USING BAKED FALLBACK");
+        string fallbackUrl = GetStreamingAssetsUrl($"questions/{selectedPersona}/manifest.json");
+        manifestLoadCoroutine = StartCoroutine(LoadManifestCoroutine(fallbackUrl, true));
+    }
+
+    private bool IsUsableManifest(PersonaManifestData manifest)
+    {
+        if (manifest == null || manifest.questions == null || manifest.questions.Count != 12) return false;
+        foreach (QuestionItemData item in manifest.questions)
+        {
+            if (item == null || string.IsNullOrWhiteSpace(item.question) || string.IsNullOrWhiteSpace(item.gesture))
+                return false;
+        }
+        return true;
+    }
+
+    private IEnumerator LoadManifestCoroutine(string url, bool isFallback)
     {
         using (UnityWebRequest www = UnityWebRequest.Get(url))
         {
@@ -122,6 +205,11 @@ public class QuestionPlaybackController : MonoBehaviour
                 string jsonText = www.downloadHandler.text;
                 currentManifest = JsonUtility.FromJson<PersonaManifestData>(jsonText);
                 Debug.Log($"[QuestionPlaybackController] Successfully loaded manifest from '{url}' with {currentManifest?.questions?.Count ?? 0} questions.");
+                if (isFallback)
+                {
+                    currentManifest.role = targetRole;
+                    currentManifest.source = "baked_fallback";
+                }
                 OnManifestLoaded?.Invoke(currentManifest);
 
                 if (autoStartOnManifestLoad) AdvanceToNextQuestion();
@@ -131,6 +219,7 @@ public class QuestionPlaybackController : MonoBehaviour
                 Debug.LogError($"[QuestionPlaybackController] Failed to load manifest from '{url}': {www.error}");
             }
         }
+        manifestLoadCoroutine = null;
     }
 
     public void RestartPlayback()
@@ -189,7 +278,14 @@ public class QuestionPlaybackController : MonoBehaviour
         isPlaying = true;
         audioSource.Stop();
 
-        string audioUrl = GetStreamingAssetsUrl($"questions/{selectedPersona}/{item.audio_file}");
+        string audioUrl = ResolveAudioUrl(item);
+        if (string.IsNullOrEmpty(audioUrl))
+        {
+            Debug.LogWarning($"[QuestionPlaybackController] Q{item.id:D2} has no audio URL; displaying text without playback.");
+            isPlaying = false;
+            audioLoadCoroutine = null;
+            yield break;
+        }
         Debug.Log($"[QuestionPlaybackController] Loading spoken voice audio clip from URL: {audioUrl}");
 
         bool isWav = item.audio_file.EndsWith(".wav", StringComparison.OrdinalIgnoreCase);
@@ -237,6 +333,13 @@ public class QuestionPlaybackController : MonoBehaviour
 
         isPlaying = false;
         audioLoadCoroutine = null;
+    }
+
+    public string ResolveAudioUrl(QuestionItemData item)
+    {
+        if (item == null || string.IsNullOrWhiteSpace(item.audio_file)) return string.Empty;
+        if (item.audio_file.Contains("://")) return item.audio_file;
+        return GetStreamingAssetsUrl($"questions/{selectedPersona}/{item.audio_file}");
     }
 
     private void AmplifyAudioClip(AudioClip clip, float gain)

@@ -28,6 +28,11 @@ public class PersonaManager : MonoBehaviour
 
     public bool SelectPersona(string personaId)
     {
+        return SelectPersona(personaId, string.Empty);
+    }
+
+    public bool SelectPersona(string personaId, string targetRole)
+    {
         PersonaSlot selected = null;
         foreach (PersonaSlot slot in personas)
         {
@@ -50,7 +55,10 @@ public class PersonaManager : MonoBehaviour
             playbackController.activeAvatarGestureController = selected.gestureController;
             playbackController.activeAvatarLipSync = selected.lipSync;
             if (selected.lipSync != null) selected.lipSync.audioSource = playbackController.audioSource;
-            playbackController.LoadManifest(selected.persona);
+            if (string.IsNullOrWhiteSpace(targetRole))
+                playbackController.LoadManifest(selected.persona);
+            else
+                playbackController.LoadRoleBasedManifest(selected.persona, targetRole);
         }
 
         OnPersonaChanged?.Invoke(selected);

@@ -5,15 +5,13 @@ using UnityEditor.Android;
 using UnityEngine;
 
 /// <summary>
-/// Unity and editor-only avatar packages can infer Android permissions from APIs
-/// that V-STIPA never calls. Remove those permissions from every generated source
-/// manifest before Gradle performs its final merge.
+/// Keep the one network permission required by optional role-based interviews while
+/// removing unrelated avatar-package permissions before Gradle's final merge.
 /// </summary>
 public sealed class QuestAndroidManifestPostprocessor : IPostGenerateGradleAndroidProject
 {
     private static readonly HashSet<string> RemovedPermissions = new HashSet<string>
     {
-        "android.permission.INTERNET",
         "android.permission.ACCESS_NETWORK_STATE",
         "android.permission.RECORD_AUDIO",
         "com.oculus.permission.EYE_TRACKING"
@@ -30,6 +28,12 @@ public sealed class QuestAndroidManifestPostprocessor : IPostGenerateGradleAndro
             document.Load(manifestPath);
             XmlElement root = document.DocumentElement;
             if (root == null) continue;
+
+            XmlElement application = root.SelectSingleNode("application") as XmlElement;
+            if (application != null)
+            {
+                application.SetAttribute("usesCleartextTraffic", "http://schemas.android.com/apk/res/android", "true");
+            }
 
             var toRemove = new List<XmlNode>();
             foreach (XmlNode child in root.ChildNodes)
@@ -50,9 +54,9 @@ public sealed class QuestAndroidManifestPostprocessor : IPostGenerateGradleAndro
                 removals++;
             }
 
-            if (toRemove.Count > 0) document.Save(manifestPath);
+            document.Save(manifestPath);
         }
 
-        Debug.Log($"[QuestManifest] Removed {removals} unused network, microphone, and eye-tracking manifest entries.");
+        Debug.Log($"[QuestManifest] Preserved live-backend internet access and removed {removals} unused network-state, microphone, and eye-tracking entries.");
     }
 }

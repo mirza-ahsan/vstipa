@@ -315,27 +315,37 @@ public static class BuildScript
         GameObject startCard = UIPanel("Selection Card", start.transform, new Color(Panel.r, Panel.g, Panel.b, 0.98f),
             new Vector2(0.18f, 0.16f), new Vector2(0.82f, 0.86f));
         Text title = UIText("Title", startCard.transform, font, "Choose your interviewer", 48, Cream, TextAnchor.MiddleCenter,
-            new Vector2(0.08f, 0.73f), new Vector2(0.92f, 0.92f));
+            new Vector2(0.08f, 0.79f), new Vector2(0.92f, 0.93f));
         title.fontStyle = FontStyle.Bold;
         UIText("Subtitle", startCard.transform, font,
-            "Practice the same 12-question interview with a different communication style.", 24, Muted, TextAnchor.MiddleCenter,
-            new Vector2(0.1f, 0.61f), new Vector2(0.9f, 0.75f));
+            "Enter the position you are preparing for. AI creates a tailored 12-question interview.", 23, Muted, TextAnchor.MiddleCenter,
+            new Vector2(0.1f, 0.68f), new Vector2(0.9f, 0.79f));
+
+        Text roleLabel = UIText("Role Label", startCard.transform, font, "TARGET ROLE OR POSITION", 18, Cream, TextAnchor.MiddleLeft,
+            new Vector2(0.08f, 0.59f), new Vector2(0.92f, 0.67f));
+        roleLabel.fontStyle = FontStyle.Bold;
+        InputField roleInput = UIInputField("Target Role", startCard.transform, font, "Software Engineer",
+            "e.g. Backend Engineer, Product Designer, Data Analyst",
+            new Vector2(0.08f, 0.49f), new Vector2(0.92f, 0.60f));
 
         Button warmButton = UIButton("Warm Persona", startCard.transform, font, "1  WARM & ENCOURAGING\nSupportive prompts and reassuring pacing", Warm,
-            new Vector2(0.08f, 0.40f), new Vector2(0.36f, 0.61f));
+            new Vector2(0.08f, 0.28f), new Vector2(0.36f, 0.46f));
         Button neutralButton = UIButton("Neutral Persona", startCard.transform, font, "2  NEUTRAL & PROFESSIONAL\nMeasured prompts and balanced pacing", Neutral,
-            new Vector2(0.36f, 0.40f), new Vector2(0.64f, 0.61f));
+            new Vector2(0.36f, 0.28f), new Vector2(0.64f, 0.46f));
         Button sternButton = UIButton("Stern Persona", startCard.transform, font, "3  STERN & CHALLENGING\nDirect prompts and firmer delivery", Stern,
-            new Vector2(0.64f, 0.40f), new Vector2(0.92f, 0.61f));
+            new Vector2(0.64f, 0.28f), new Vector2(0.92f, 0.46f));
         string controlsHint = EditorUserBuildSettings.activeBuildTarget == BuildTarget.Android
             ? "QUEST CONTROLS  •  A / trigger: Warm  •  B: Neutral  •  X or Y: Stern"
             : "Click a persona or press 1, 2, or 3  •  Headphones recommended";
         UIText("Controls Hint", startCard.transform, font, controlsHint, 20, Muted,
-            TextAnchor.MiddleCenter, new Vector2(0.08f, 0.20f), new Vector2(0.92f, 0.32f));
+            TextAnchor.MiddleCenter, new Vector2(0.08f, 0.18f), new Vector2(0.92f, 0.27f));
+        Text startStatus = UIText("Generation Status", startCard.transform, font,
+            "Enter a target role, then choose an interviewer style.", 18, Warm, TextAnchor.MiddleCenter,
+            new Vector2(0.08f, 0.10f), new Vector2(0.92f, 0.18f));
         UIText("Fallback Notice", startCard.transform, font,
-            "Prototype note: persona voice, pacing, gestures, and colour change now; the supplied T1 Avaturn body is reused until distinct facial-rig exports arrive.",
-            17, new Color(Muted.r, Muted.g, Muted.b, 0.78f), TextAnchor.MiddleCenter,
-            new Vector2(0.1f, 0.08f), new Vector2(0.9f, 0.20f));
+            "Live AI uses the local backend. If it is unavailable, the app automatically uses the baked interview fallback.",
+            16, new Color(Muted.r, Muted.g, Muted.b, 0.78f), TextAnchor.MiddleCenter,
+            new Vector2(0.1f, 0.03f), new Vector2(0.9f, 0.10f));
 
         GameObject interview = new GameObject("Interview HUD", typeof(RectTransform));
         interview.transform.SetParent(canvasGo.transform, false);
@@ -377,6 +387,8 @@ public static class BuildScript
         ui.questionProgressText = progress;
         ui.questionContentText = question;
         ui.statusText = status;
+        ui.startStatusText = startStatus;
+        ui.targetRoleInput = roleInput;
         ui.nextButton = next;
         ui.warmButton = warmButton;
         ui.neutralButton = neutralButton;
@@ -441,6 +453,28 @@ public static class BuildScript
         text.resizeTextMinSize = 14;
         text.resizeTextMaxSize = 22;
         return button;
+    }
+
+    private static InputField UIInputField(string name, Transform parent, Font font, string value, string placeholder,
+        Vector2 min, Vector2 max)
+    {
+        GameObject go = UIPanel(name, parent, new Color(0.96f, 0.94f, 0.89f, 1f), min, max);
+        InputField input = go.AddComponent<InputField>();
+        input.lineType = InputField.LineType.SingleLine;
+        input.characterLimit = 80;
+
+        Text placeholderText = UIText("Placeholder", go.transform, font, placeholder, 22,
+            new Color(0.24f, 0.30f, 0.36f, 0.55f), TextAnchor.MiddleLeft,
+            new Vector2(0.035f, 0.08f), new Vector2(0.965f, 0.92f));
+        placeholderText.fontStyle = FontStyle.Italic;
+        Text valueText = UIText("Text", go.transform, font, value, 23, Navy, TextAnchor.MiddleLeft,
+            new Vector2(0.035f, 0.08f), new Vector2(0.965f, 0.92f));
+        valueText.supportRichText = false;
+
+        input.placeholder = placeholderText;
+        input.textComponent = valueText;
+        input.text = value;
+        return input;
     }
 
     private static void Stretch(RectTransform rect, Vector2 min, Vector2 max)
@@ -543,6 +577,7 @@ public static class BuildScript
         if (analyzer == null || analyzer.profile == null)
             failures.Add("uLipSync analyzer/profile is missing.");
         if (ui == null || ui.startPanel == null || ui.interviewPanel == null || ui.completionPanel == null ||
+            ui.targetRoleInput == null || ui.startStatusText == null ||
             ui.warmButton == null || ui.neutralButton == null || ui.sternButton == null)
             failures.Add("Persona selection, interview, or completion UI references are incomplete.");
         if (GameObject.Find("Slim Executive Interview Desk") == null ||
@@ -674,7 +709,7 @@ public static class BuildScript
             device.FindPropertyRelative("enabled").boolValue =
                 manifestName == "eureka" || manifestName == "quest3s";
         }
-        serializedMetaQuest.FindProperty("forceRemoveInternetPermission").boolValue = true;
+        serializedMetaQuest.FindProperty("forceRemoveInternetPermission").boolValue = false;
         serializedMetaQuest.FindProperty("optimizeBufferDiscards").boolValue = false;
         serializedMetaQuest.ApplyModifiedPropertiesWithoutUndo();
 
@@ -690,6 +725,7 @@ public static class BuildScript
         PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
         PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel29;
         PlayerSettings.Android.targetSdkVersion = AndroidSdkVersions.AndroidApiLevelAuto;
+        PlayerSettings.Android.forceInternetPermission = true;
         PlayerSettings.SetGraphicsAPIs(BuildTarget.Android, new[] { GraphicsDeviceType.OpenGLES3 });
         PlayerSettings.colorSpace = ColorSpace.Linear;
         PlayerSettings.MTRendering = true;

@@ -4,6 +4,8 @@
 - **Backend Tests (`backend/tests/`)**
   - `test_schema.py`: Validates persona YAML definitions and output JSON schema adherence.
   - `test_generate_questions.py`: Unit test with mocked Gemini API responses.
+  - `test_live_api.py`: Validates role normalization, 12-question OpenRouter manifest
+    shape, missing-key behavior, and live PCM audio responses without using a real key.
 - **Unity Tests (`unity-project/Assets/Scripts/Tests/`)**
   - Playback controller manifest parsing, step bounds, and baked PCM WAV readability tests.
 - **Scene/build validator (`V-STIPA → Validate Phase 3 + 4`)**
@@ -36,4 +38,6 @@
   - 3 consecutive recorded, human-paced 3–4 minute runs without glitches.
   - Final submission recording reviewed from start to finish.
 - **Phase 6 Gate (Optional):**
-  - Live mode calls work over USB-C tether; mid-call disconnection falls back silently.
+  - Role-based calls produce 12 relevant questions with a rotated key configured.
+  - Live male audio loads through the same lip-sync path.
+  - Missing credentials/network and a mid-call disconnection fall back to baked content.

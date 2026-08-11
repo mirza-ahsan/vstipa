@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using NUnit.Framework;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 public class PlaybackControllerTests
 {
@@ -85,5 +87,63 @@ public class PlaybackControllerTests
         Assert.AreEqual(1, controller.currentQuestionIndex);
 
         Object.DestroyImmediate(go);
+    }
+
+    [Test]
+    public void TestLiveAudioUrlIsUsedWithoutStreamingAssetsPrefix()
+    {
+        GameObject go = new GameObject("TestLiveAudioUrl");
+        QuestionPlaybackController controller = go.AddComponent<QuestionPlaybackController>();
+        QuestionItemData item = new QuestionItemData
+        {
+            id = 1,
+            audio_file = "http://127.0.0.1:8001/api/interviews/session/audio/q01.wav"
+        };
+
+        Assert.AreEqual(item.audio_file, controller.ResolveAudioUrl(item));
+        Object.DestroyImmediate(go);
+    }
+
+    [Test]
+    public void TestRoleInterviewRequestSerialization()
+    {
+        RoleInterviewRequestData request = new RoleInterviewRequestData
+        {
+            role = "Senior Backend Engineer",
+            persona = "neutral"
+        };
+
+        string json = JsonUtility.ToJson(request);
+        StringAssert.Contains("Senior Backend Engineer", json);
+        StringAssert.Contains("neutral", json);
+    }
+
+    [Test]
+    public void TestQuestManifestPreservesLiveBackendInternetOnly()
+    {
+        string tempDirectory = Path.Combine(Path.GetTempPath(), $"vstipa-manifest-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDirectory);
+        string manifestPath = Path.Combine(tempDirectory, "AndroidManifest.xml");
+        File.WriteAllText(manifestPath, @"<?xml version=""1.0"" encoding=""utf-8""?>
+<manifest xmlns:android=""http://schemas.android.com/apk/res/android"">
+  <uses-permission android:name=""android.permission.INTERNET"" />
+  <uses-permission android:name=""android.permission.ACCESS_NETWORK_STATE"" />
+  <uses-permission android:name=""android.permission.RECORD_AUDIO"" />
+  <application android:label=""V-STIPA"" />
+</manifest>");
+
+        try
+        {
+            new QuestAndroidManifestPostprocessor().OnPostGenerateGradleAndroidProject(tempDirectory);
+            string processed = File.ReadAllText(manifestPath);
+            StringAssert.Contains("android.permission.INTERNET", processed);
+            StringAssert.Contains("usesCleartextTraffic=\"true\"", processed);
+            StringAssert.DoesNotContain("android.permission.ACCESS_NETWORK_STATE", processed);
+            StringAssert.DoesNotContain("android.permission.RECORD_AUDIO", processed);
+        }
+        finally
+        {
+            Directory.Delete(tempDirectory, true);
+        }
     }
 }

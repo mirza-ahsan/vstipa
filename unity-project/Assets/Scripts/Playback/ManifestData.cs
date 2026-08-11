@@ -17,5 +17,16 @@ public class PersonaManifestData
     public string persona;
     public string persona_name;
     public int total_questions;
+    public string role;
+    public string source;
+    public string model;
+    public string session_id;
     public List<QuestionItemData> questions;
+}
+
+[Serializable]
+public class RoleInterviewRequestData
+{
+    public string role;
+    public string persona;
 }

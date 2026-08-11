@@ -7,8 +7,9 @@ interview questions — delivered with lip-sync and gestures. The reliable Track
 fallback keeps all question content and PCM voice audio baked into the app; offline
 operation is useful but is no longer a submission requirement.
 
-> Scope note: this is a demo build, not a production/multi-user app. Live conversation
-> memory, microphone capture, and answer processing are intentionally out of scope.
+> Scope note: this is a demo build, not a production/multi-user app. It can generate a
+> fresh role-based question set at interview start, but live conversation memory,
+> microphone capture, answer scoring, and follow-up generation remain out of scope.
 
 ---
 
@@ -26,14 +27,14 @@ verified by a separate review pass, not just "it seemed to work."
 | 3 | Avatar & lip-sync (3 personas) | 🟨 In progress | ⬜ | Verified T1 Avaturn body, native idle/procedural gestures, uLipSync MFCC input, and a static-face mouth proxy run in WebGL. Only one avatar source is available and it has no facial morphs; three distinct facial-rig exports and real-viseme wiring remain |
 | 4 | Staging, environment, performance polish | 🟨 In progress | ⬜ | Interview room, persona-selection UI, question HUD, completion/restart flow, and persona accents are built and browser-tested; Quest performance validation remains hardware-blocked |
 | 5 | Full dry-run rehearsal | 🟨 In progress | ⬜ | Automated local WebGL flow reaches completion and switches personas; three human-paced recorded rehearsals and final submission recording remain |
-| 6 | *(Optional)* Live-mode stretch feature | ⬜ Not started | ⬜ | Only attempt if Phase 5 is solid with time to spare |
+| 6 | Role-based live interview generation | 🟨 In progress | ⬜ | Target-role UI, secure local OpenRouter backend, strict 12-question schema, lazy male TTS, and baked fallback are implemented; live verification awaits a rotated API key |
 
 **Status legend:** ⬜ Not started · 🟨 In progress · ✅ Done · ⚠️ Blocked
 
 **What's left right now:** supply three suitable facial-rig avatar exports, complete an
 independent Phase 3 review, run Quest checks only if headset footage is required, and
-record three clean human-paced rehearsals plus the final submission. Phase 6 remains a
-bonus, not a requirement.
+record three clean human-paced rehearsals plus the final submission. The role-based
+mode also needs one live pass after a fresh OpenRouter key is configured locally.
 
 ---
 
@@ -59,6 +60,7 @@ bonus, not a requirement.
 | Antigravity CLI | latest | Agentic build tool used to implement this plan phase-by-phase, with Unity MCP + Meta XR Unity MCP Extension connected for direct Editor access |
 | Google AI Studio API key | — | Gemini 3.6 Flash calls (content generation only, dev-machine only, never shipped in the build) |
 | Google Cloud project with Billing + Text-to-Speech API enabled | — | Voice rendering for the baked question audio (stays within the free tier at this project's volume) |
+| OpenRouter API key | — | Optional live role-based question generation; held only by the local backend and never shipped to Unity/WebGL |
 
 ---
 
@@ -112,6 +114,8 @@ Copy `backend/.env.example` to `backend/.env` and fill in:
 ```
 GEMINI_API_KEY=...
 GOOGLE_APPLICATION_CREDENTIALS=path/to/cloud-tts-service-account.json
+OPENROUTER_API_KEY=...
+OPENROUTER_MODEL=openrouter/free
 ```
 
 ### 6. Antigravity CLI + MCP
@@ -161,6 +165,20 @@ Quest controls are intentionally deterministic: **A/right trigger** selects Warm
 advances, **B** selects Neutral or returns to the persona menu, and **X/Y** selects
 Stern. The APK contains the room, avatar, question manifests, and PCM voice audio;
 no separate environment package or runtime server is required.
+
+### 9. Run role-based live mode
+
+Keep the static WebGL server on port 8000 and start the local API in a second terminal:
+
+```bash
+cd backend
+uv run uvicorn app.main:app --host 127.0.0.1 --port 8001
+```
+
+Open <http://127.0.0.1:8000/>, enter a target position, and choose a persona. Unity
+posts only the role and persona to the local API. The API key remains in
+`backend/.env`; it is never embedded in the build or returned to the browser. If live
+generation fails, the app automatically continues with the baked 12-question set.
 
 ---
 
