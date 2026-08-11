@@ -29,8 +29,11 @@ public class PlaybackUI : MonoBehaviour
     public Text completionSummaryText;
     public PersonaManager personaManager;
 
-    private float lastAdvanceTime = 0f;
-    private const float COOLDOWN_SEC = 0.5f;
+    [Header("Input Safety")]
+    [Tooltip("Minimum time between accepted Next actions. Prevents mouse, keyboard, and Quest double-presses from skipping a question.")]
+    public float advanceDebounceSeconds = 1.5f;
+
+    private float nextAdvanceAllowedAt = float.NegativeInfinity;
 
     private void Start()
     {
@@ -63,8 +66,9 @@ public class PlaybackUI : MonoBehaviour
     private void Update()
     {
         // Detect VR controller inputs (A, B, X, Y, Triggers, Touchpad) or Keyboard (Space, Enter, Click)
-        bool vrInputDetected = Input.GetButtonDown("Fire1") ||
-                               Input.GetButtonDown("Submit") ||
+        // Mouse clicks are handled exclusively by Button.onClick. Including the
+        // legacy Fire1 mapping here would process the same physical click twice.
+        bool vrInputDetected = Input.GetButtonDown("Submit") ||
                                Input.GetKeyDown(KeyCode.Space) ||
                                Input.GetKeyDown(KeyCode.Return) ||
                                Input.GetKeyDown(KeyCode.JoystickButton0) ||
@@ -83,9 +87,8 @@ public class PlaybackUI : MonoBehaviour
         }
 
         if (vrInputDetected && interviewPanel != null && interviewPanel.activeSelf &&
-            playbackController?.currentManifest != null && (Time.time - lastAdvanceTime > COOLDOWN_SEC))
+            playbackController?.currentManifest != null)
         {
-            lastAdvanceTime = Time.time;
             OnNextButtonClicked();
         }
     }
@@ -129,10 +132,24 @@ public class PlaybackUI : MonoBehaviour
 
     public void OnNextButtonClicked()
     {
-        if (playbackController != null)
+        TryAdvance(Time.unscaledTime);
+    }
+
+    public bool TryAdvance(float timestamp)
+    {
+        if (playbackController == null)
         {
-            playbackController.AdvanceToNextQuestion();
+            return false;
         }
+        if (timestamp < nextAdvanceAllowedAt)
+        {
+            Debug.Log("[PlaybackUI] Ignored duplicate Next input during debounce window.");
+            return false;
+        }
+
+        nextAdvanceAllowedAt = timestamp + Mathf.Max(0.1f, advanceDebounceSeconds);
+        playbackController.AdvanceToNextQuestion();
+        return true;
     }
 
     private void HandleQuestionChanged(QuestionItemData item)

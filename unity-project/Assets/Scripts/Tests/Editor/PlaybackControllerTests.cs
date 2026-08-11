@@ -129,6 +129,37 @@ public class PlaybackControllerTests
     }
 
     [Test]
+    public void TestPlaybackUiDebouncesAccidentalDoubleClick()
+    {
+        GameObject go = new GameObject("TestDoubleClickGuard");
+        QuestionPlaybackController controller = go.AddComponent<QuestionPlaybackController>();
+        controller.currentManifest = new PersonaManifestData
+        {
+            persona = "warm",
+            persona_name = "Warm Interviewer",
+            total_questions = 3,
+            questions = new List<QuestionItemData>
+            {
+                new QuestionItemData { id = 1, question = "Question one", tone = "warm", gesture = "nod" },
+                new QuestionItemData { id = 2, question = "Question two", tone = "warm", gesture = "nod" },
+                new QuestionItemData { id = 3, question = "Question three", tone = "warm", gesture = "nod" }
+            }
+        };
+        PlaybackUI ui = go.AddComponent<PlaybackUI>();
+        ui.playbackController = controller;
+        ui.advanceDebounceSeconds = 1.5f;
+
+        Assert.IsTrue(ui.TryAdvance(10f));
+        Assert.IsFalse(ui.TryAdvance(10.05f));
+        Assert.AreEqual(0, controller.currentQuestionIndex, "A double-click must not skip question one.");
+        Assert.IsFalse(ui.TryAdvance(10.81f));
+        Assert.IsTrue(ui.TryAdvance(11.51f));
+        Assert.AreEqual(1, controller.currentQuestionIndex);
+
+        Object.DestroyImmediate(go);
+    }
+
+    [Test]
     public void TestSeatedPoseBindsAndBendsBothLegs()
     {
         GameObject avatar = new GameObject("Avatar");
