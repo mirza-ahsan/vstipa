@@ -37,7 +37,6 @@ public class PersonaManager : MonoBehaviour
         foreach (PersonaSlot slot in personas)
         {
             bool isSelected = slot != null && string.Equals(slot.persona, personaId, StringComparison.OrdinalIgnoreCase);
-            if (slot?.avatarRoot != null) slot.avatarRoot.SetActive(isSelected);
             if (isSelected) selected = slot;
         }
 
@@ -46,6 +45,12 @@ public class PersonaManager : MonoBehaviour
             Debug.LogError($"[PersonaManager] Unknown persona '{personaId}'.");
             return false;
         }
+
+        // Tone presets can intentionally share one interviewer GameObject. Resolve
+        // the preset first, then toggle roots by identity so a later preset cannot
+        // disable the already-selected shared avatar.
+        foreach (PersonaSlot slot in personas)
+            if (slot?.avatarRoot != null) slot.avatarRoot.SetActive(slot.avatarRoot == selected.avatarRoot);
 
         activePersona = selected.persona;
         selected.lipSync?.SetPersonaBaselineSmile(selected.baselineSmile);

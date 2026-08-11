@@ -46,12 +46,17 @@ def test_question_schema_validation():
     assert q_list.questions[0].gesture == "nod"
 
 
-def test_offline_fallback_uses_male_neural_voices():
+def test_offline_fallback_uses_one_male_neural_voice_for_all_tones():
     assert {persona["voice"] for persona in PERSONAS.values()} == {
         "en-US-AndrewNeural",
-        "en-US-ChristopherNeural",
-        "en-US-EricNeural",
     }
+
+    personas_dir = Path(__file__).parent.parent / "personas"
+    cloud_voices = {
+        yaml.safe_load(path.read_text(encoding="utf-8"))["tts_voice_name"]
+        for path in personas_dir.glob("*.yaml")
+    }
+    assert cloud_voices == {"en-US-Wavenet-D"}
 
 def test_invalid_question_schema():
     invalid_data = {

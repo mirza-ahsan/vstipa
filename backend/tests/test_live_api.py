@@ -5,6 +5,7 @@ import wave
 from fastapi.testclient import TestClient
 
 from app import main
+from app.audio_service import VOICE_SETTINGS
 from app.openrouter_service import OpenRouterService, OpenRouterUnavailable
 from app.schemas import GeneratedQuestion, GeneratedQuestionSet
 
@@ -48,6 +49,13 @@ class FakeAudioService:
             wav_file.setframerate(24000)
             wav_file.writeframes(b"\0\0" * 2400)
         return self.output_path
+
+
+def test_live_tones_use_one_male_voice_identity():
+    assert {settings[0] for settings in VOICE_SETTINGS.values()} == {
+        "en-US-AndrewNeural",
+    }
+    assert len({settings[1:] for settings in VOICE_SETTINGS.values()}) == 3
 
 
 def test_role_interview_returns_twelve_role_specific_questions(tmp_path, monkeypatch):

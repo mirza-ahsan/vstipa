@@ -27,7 +27,8 @@
   - Cycling through a baked question set succeeds without a live backend.
   - Airplane mode is an optional resilience check for headset footage.
 - **Phase 3 Gate:**
-  - Three distinct Avaturn facial rigs are present and verified as Humanoid.
+  - One male interviewer facial rig is present and verified as Humanoid; all three
+    tone presets reference that same avatar.
   - Avatar facial lip-sync matches pre-baked audio.
   - Gesture animations trigger correctly per question tone/gesture tag.
 - **Phase 4 Gate:**

@@ -31,7 +31,7 @@ PERSONAS = {
     "stern": {
         "name": "Stern & Challenging Interviewer",
         "tone": "stern",
-        "voice": "en-US-ChristopherNeural",
+        "voice": "en-US-AndrewNeural",
         "rate": "+5%",
         "pitch": "-4Hz",
         "gestures": ["arms_crossed", "lean_back", "nod_firm", "idle", "thinking"],
@@ -53,7 +53,7 @@ PERSONAS = {
     "neutral": {
         "name": "Neutral & Professional Interviewer",
         "tone": "neutral",
-        "voice": "en-US-EricNeural",
+        "voice": "en-US-AndrewNeural",
         "rate": "+0%",
         "pitch": "+0Hz",
         "gestures": ["nod", "idle", "thinking", "lean_forward"],

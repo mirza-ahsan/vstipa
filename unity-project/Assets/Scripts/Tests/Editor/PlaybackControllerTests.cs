@@ -160,6 +160,29 @@ public class PlaybackControllerTests
     }
 
     [Test]
+    public void TestTonePresetsCanShareOneMaleAvatar()
+    {
+        GameObject systems = new GameObject("Systems");
+        GameObject avatar = new GameObject("Male Interviewer");
+        PersonaManager manager = systems.AddComponent<PersonaManager>();
+        manager.personas = new[]
+        {
+            Tone("warm", avatar),
+            Tone("neutral", avatar),
+            Tone("stern", avatar)
+        };
+
+        Assert.IsTrue(manager.SelectPersona("neutral"));
+        Assert.AreEqual("neutral", manager.activePersona);
+        Assert.IsTrue(avatar.activeSelf, "Selecting a later tone preset must not disable its shared avatar root.");
+
+        manager.ReturnToSelection();
+        Assert.IsFalse(avatar.activeSelf);
+        Object.DestroyImmediate(avatar);
+        Object.DestroyImmediate(systems);
+    }
+
+    [Test]
     public void TestSeatedPoseBindsAndBendsBothLegs()
     {
         GameObject avatar = new GameObject("Avatar");
@@ -214,5 +237,15 @@ public class PlaybackControllerTests
         GameObject child = new GameObject(name);
         child.transform.SetParent(parent, false);
         return child.transform;
+    }
+
+    private static PersonaManager.PersonaSlot Tone(string id, GameObject avatar)
+    {
+        return new PersonaManager.PersonaSlot
+        {
+            persona = id,
+            displayName = id,
+            avatarRoot = avatar
+        };
     }
 }

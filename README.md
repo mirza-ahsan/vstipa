@@ -24,17 +24,16 @@ verified by a separate review pass, not just "it seemed to work."
 | 0 | Environment & toolchain setup | ✅ Done | ✅ | Verified uv Python 3.12.13, adb, Unity Hub, MCP config & repo scaffold |
 | 1 | Content generation pipeline (Gemini → questions → TTS audio) | ✅ Done | ✅ | Pipeline scripts, persona definitions, schemas, unit tests, and baked manifest+audio assets created for warm, stern, neutral personas |
 | 2 | Offline playback core loop (airplane-mode test) | ✅ Done | ✅ | QuestionPlaybackController, PlaybackUI, WorldSpace Canvas, and NUnit tests built; 25MB APK deployed & running on Quest in airplane mode |
-| 3 | Avatar & lip-sync (3 personas) | 🟨 In progress | ⬜ | Verified T1 Avaturn body, native idle/procedural gestures, uLipSync MFCC input, and a static-face mouth proxy run in WebGL. Only one avatar source is available and it has no facial morphs; three distinct facial-rig exports and real-viseme wiring remain |
+| 3 | Avatar & lip-sync (one male interviewer, 3 tones) | 🟨 In progress | ⬜ | One seated male avatar is shared by warm, neutral, and stern tone presets, with one male voice identity, native idle/procedural gestures, uLipSync MFCC input, and a static-face mouth proxy. A facial-rig export and real-viseme wiring remain |
 | 4 | Staging, environment, performance polish | 🟨 In progress | ⬜ | Interview room, persona-selection UI, question HUD, completion/restart flow, and persona accents are built and browser-tested; Quest performance validation remains hardware-blocked |
 | 5 | Full dry-run rehearsal | 🟨 In progress | ⬜ | Automated local WebGL flow reaches completion and switches personas; three human-paced recorded rehearsals and final submission recording remain |
-| 6 | Role-based live interview generation | 🟨 In progress | ⬜ | Target-role UI, secure local OpenRouter backend, strict 12-question schema, lazy male TTS, and baked fallback are implemented; live verification awaits a rotated API key |
+| 6 | Role-based live interview generation | 🟨 In progress | ⬜ | Target-role UI, secure local OpenRouter backend, strict 12-question schema, lazy male TTS, and baked fallback are implemented; a live 12-question pass and unavailable-backend fallback are verified locally |
 
 **Status legend:** ⬜ Not started · 🟨 In progress · ✅ Done · ⚠️ Blocked
 
-**What's left right now:** supply three suitable facial-rig avatar exports, complete an
+**What's left right now:** supply one suitable male facial-rig avatar export, complete an
 independent Phase 3 review, run Quest checks only if headset footage is required, and
-record three clean human-paced rehearsals plus the final submission. The role-based
-mode also needs one live pass after a fresh OpenRouter key is configured locally.
+record three clean human-paced rehearsals plus the final submission.
 
 ---
 
@@ -134,8 +133,9 @@ uv run render_audio.py           # calls Cloud TTS, writes PCM WAV + manifest
 Copy the output into `unity-project/Assets/StreamingAssets/questions/` if the script
 doesn't already write there directly.
 
-`generate_offline_assets.py` uses persona-matched male Edge neural voices and also
-needs `ffmpeg` on `PATH` to convert the generated audio to 24 kHz mono PCM WAV files
+`generate_offline_assets.py` uses one male Edge neural voice with tone-specific rate
+and pitch settings. It also needs `ffmpeg` on `PATH` to convert the generated audio to
+24 kHz mono PCM WAV files
 that WebGL and uLipSync can sample reliably. This remains a generation-stage tool;
 the deployed Unity application only loads the baked clips.
 
@@ -144,7 +144,7 @@ For the recorded browser fallback, use **V-STIPA → Build WebGL** in Unity, the
 `local-build/webgl/` from the repository root:
 
 ```bash
-python -m http.server 8000 --directory local-build/webgl
+uv run python scripts/serve_webgl.py
 ```
 
 Open <http://127.0.0.1:8000/>. For a Quest build, use **V-STIPA → Build Android**.
@@ -175,7 +175,7 @@ cd backend
 uv run uvicorn app.main:app --host 127.0.0.1 --port 8001
 ```
 
-Open <http://127.0.0.1:8000/>, enter a target position, and choose a persona. Unity
+Open <http://127.0.0.1:8000/>, enter a target position, and choose an interview tone. Unity
 posts only the role and persona to the local API. The API key remains in
 `backend/.env`; it is never embedded in the build or returned to the browser. If live
 generation fails, the app automatically continues with the baked 12-question set.
@@ -185,7 +185,7 @@ generation fails, the app automatically continues with the baked 12-question set
 ## Verifying the Demo Is Actually Reliable
 
 Before recording the final submission, go through the full question sequence for each
-persona and record at least three human-paced rehearsals. The baked Track 1 path should
+tone and record at least three human-paced rehearsals. The baked Track 1 path should
 remain the recovery baseline. If Quest footage is required, repeat the checks on the
 headset, on battery power, and use airplane mode as an optional resilience test.
 

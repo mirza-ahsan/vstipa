@@ -64,9 +64,9 @@ public static class BuildScript
         analyzer.outputSoundGain = 1f;
 
         GameObject avatarStage = new GameObject("AvatarStage");
-        PersonaManager.PersonaSlot warm = CreatePersona(avatarStage.transform, "warm", "Warm & Encouraging", Warm, 25f, audioSource);
-        PersonaManager.PersonaSlot stern = CreatePersona(avatarStage.transform, "stern", "Stern & Challenging", Stern, 0f, audioSource);
-        PersonaManager.PersonaSlot neutral = CreatePersona(avatarStage.transform, "neutral", "Neutral & Professional", Neutral, 8f, audioSource);
+        PersonaManager.PersonaSlot warm = CreateInterviewer(avatarStage.transform, audioSource);
+        PersonaManager.PersonaSlot stern = CreateTonePreset(warm, "stern", "Stern & Challenging", Stern, 0f);
+        PersonaManager.PersonaSlot neutral = CreateTonePreset(warm, "neutral", "Neutral & Professional", Neutral, 8f);
 
         PersonaManager personaManager = systems.AddComponent<PersonaManager>();
         personaManager.playbackController = controller;
@@ -74,7 +74,7 @@ public static class BuildScript
 
         ULipSyncRouter router = systems.AddComponent<ULipSyncRouter>();
         router.analyzer = analyzer;
-        router.targets = new[] { warm.lipSync, stern.lipSync, neutral.lipSync };
+        router.targets = new[] { warm.lipSync };
 
         CreateEventSystem();
         CreateInterface(font, controller, personaManager, camera);
@@ -87,7 +87,7 @@ public static class BuildScript
         EditorSceneManager.SaveScene(scene, ScenePath);
         EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
         AssetDatabase.SaveAssets();
-        Debug.Log("[BuildScript] MainScene created: interview room, three selectable persona presets, uLipSync routing, and completion flow.");
+        Debug.Log("[BuildScript] MainScene created: interview room, one male interviewer with three selectable tone presets, uLipSync routing, and completion flow.");
     }
 
     private static Camera CreateCamera(bool questTarget)
@@ -218,8 +218,7 @@ public static class BuildScript
         // in the flat-screen recording used for the submission.
     }
 
-    private static PersonaManager.PersonaSlot CreatePersona(
-        Transform parent, string id, string displayName, Color accent, float smile, AudioSource audioSource)
+    private static PersonaManager.PersonaSlot CreateInterviewer(Transform parent, AudioSource audioSource)
     {
         GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(AvatarPath);
         GameObject avatar;
@@ -234,7 +233,7 @@ public static class BuildScript
             Debug.LogError($"[BuildScript] Missing avatar at {AvatarPath}; scene contains a diagnostic capsule.");
         }
 
-        avatar.name = $"{displayName} Avatar (T1 Fallback)";
+        avatar.name = "Male Interviewer Avatar (T1 Fallback)";
         // Align the source hips with the chair cushion. SeatedInterviewerPose bends
         // the animated legs after the native idle is evaluated, so the avatar is
         // genuinely seated rather than merely lowered behind the desk.
@@ -273,20 +272,31 @@ public static class BuildScript
 
         AvatarLipSync lipSync = avatar.AddComponent<AvatarLipSync>();
         lipSync.audioSource = audioSource;
-        lipSync.mouthProxy = CreateMouthProxy(avatar.transform, accent);
-
-        GameObject badge = Primitive($"{id} persona badge", PrimitiveType.Cube,
-            new Vector3(0.17f, 1.45f, -0.19f), new Vector3(0.06f, 0.11f, 0.015f), accent, avatar.transform, true);
-        badge.transform.localRotation = Quaternion.identity;
+        lipSync.mouthProxy = CreateMouthProxy(avatar.transform, Neutral);
 
         avatar.SetActive(false);
         return new PersonaManager.PersonaSlot
         {
-            persona = id,
-            displayName = displayName,
+            persona = "warm",
+            displayName = "Warm & Encouraging",
             avatarRoot = avatar,
             gestureController = gesture,
             lipSync = lipSync,
+            accentColor = Warm,
+            baselineSmile = 25f
+        };
+    }
+
+    private static PersonaManager.PersonaSlot CreateTonePreset(
+        PersonaManager.PersonaSlot interviewer, string id, string displayName, Color accent, float smile)
+    {
+        return new PersonaManager.PersonaSlot
+        {
+            persona = id,
+            displayName = displayName,
+            avatarRoot = interviewer.avatarRoot,
+            gestureController = interviewer.gestureController,
+            lipSync = interviewer.lipSync,
             accentColor = accent,
             baselineSmile = smile
         };
@@ -358,7 +368,7 @@ public static class BuildScript
             45, Cream, TextAnchor.MiddleLeft, new Vector2(0f, 0.61f), new Vector2(1f, 0.80f));
         title.fontStyle = FontStyle.Bold;
         UIText("Subtitle", startCard.transform, font,
-            "Choose a target role and interviewer style. V-STIPA builds a focused 12-question rehearsal around your goal.",
+            "Choose a target role and interview tone. V-STIPA builds a focused 12-question rehearsal around your goal.",
             21, Muted, TextAnchor.MiddleLeft, new Vector2(0f, 0.51f), new Vector2(0.94f, 0.62f));
 
         UIFeatureBadge("Role Badge", startCard.transform, font, "ROLE-SPECIFIC", Neutral,
@@ -375,13 +385,13 @@ public static class BuildScript
             "e.g. Backend Engineer, Product Designer, Data Analyst",
             new Vector2(0f, 0.315f), new Vector2(0.94f, 0.385f));
 
-        UIText("Persona Prompt", startCard.transform, font, "CHOOSE YOUR INTERVIEWER", 17, Cream,
+        UIText("Tone Prompt", startCard.transform, font, "CHOOSE THE INTERVIEW TONE", 17, Cream,
             TextAnchor.MiddleLeft, new Vector2(0f, 0.255f), new Vector2(1f, 0.31f));
-        Button warmButton = UIButton("Warm Persona", startCard.transform, font,
+        Button warmButton = UIButton("Warm Tone", startCard.transform, font,
             "1  WARM\nEncouraging", Warm, new Vector2(0f, 0.16f), new Vector2(0.30f, 0.255f));
-        Button neutralButton = UIButton("Neutral Persona", startCard.transform, font,
+        Button neutralButton = UIButton("Neutral Tone", startCard.transform, font,
             "2  NEUTRAL\nProfessional", Neutral, new Vector2(0.32f, 0.16f), new Vector2(0.62f, 0.255f));
-        Button sternButton = UIButton("Stern Persona", startCard.transform, font,
+        Button sternButton = UIButton("Stern Tone", startCard.transform, font,
             "3  STERN\nChallenging", Stern, new Vector2(0.64f, 0.16f), new Vector2(0.94f, 0.255f));
         string controlsHint = EditorUserBuildSettings.activeBuildTarget == BuildTarget.Android
             ? "QUEST CONTROLS  •  A / trigger: Warm  •  B: Neutral  •  X or Y: Stern"
@@ -404,7 +414,7 @@ public static class BuildScript
             Cream, TextAnchor.MiddleLeft, new Vector2(0.09f, 0.55f), new Vector2(0.93f, 0.88f));
         calloutTitle.fontStyle = FontStyle.Bold;
         UIText("Callout Detail", heroCallout.transform, font,
-            "12 tailored questions  •  3 interviewer styles\nVoice, avatar, and focused practice in one session",
+            "12 tailored questions  •  3 delivery tones\nOne male voice and avatar throughout the session",
             16, Muted, TextAnchor.MiddleLeft, new Vector2(0.09f, 0.15f), new Vector2(0.93f, 0.57f));
 
         GameObject interview = new GameObject("Interview HUD", typeof(RectTransform));
@@ -417,7 +427,7 @@ public static class BuildScript
         personaTitle.fontStyle = FontStyle.Bold;
         Text progress = UIText("Progress", card.transform, font, "Question — / 12", 20, Muted, TextAnchor.MiddleLeft,
             new Vector2(0.08f, 0.73f), new Vector2(0.92f, 0.82f));
-        Text question = UIText("Question", card.transform, font, "Select a persona to begin.", 30, Cream, TextAnchor.MiddleLeft,
+        Text question = UIText("Question", card.transform, font, "Select a tone to begin.", 30, Cream, TextAnchor.MiddleLeft,
             new Vector2(0.08f, 0.36f), new Vector2(0.92f, 0.73f));
         question.resizeTextForBestFit = true;
         question.resizeTextMinSize = 20;
@@ -437,7 +447,7 @@ public static class BuildScript
             new Vector2(0.1f, 0.42f), new Vector2(0.9f, 0.68f));
         Button restart = UIButton("Restart", completeCard.transform, font, "RESTART", Neutral,
             new Vector2(0.1f, 0.17f), new Vector2(0.47f, 0.36f));
-        Button menu = UIButton("Change Persona", completeCard.transform, font, "CHANGE PERSONA", Warm,
+        Button menu = UIButton("Change Tone", completeCard.transform, font, "CHANGE TONE", Warm,
             new Vector2(0.53f, 0.17f), new Vector2(0.9f, 0.36f));
 
         PlaybackUI ui = canvasGo.AddComponent<PlaybackUI>();
@@ -642,6 +652,7 @@ public static class BuildScript
             options = BuildOptions.None
         });
         ReportBuild(report, output);
+        AddWebGlCacheBusting(output);
     }
 
     [MenuItem("V-STIPA/Validate Phase 3 + 4")]
@@ -675,6 +686,7 @@ public static class BuildScript
 
         int realVisemeAvatars = 0;
         var sourceIds = new HashSet<string>();
+        var avatarRoots = new HashSet<GameObject>();
         if (manager?.personas != null)
         {
             foreach (PersonaManager.PersonaSlot slot in manager.personas)
@@ -685,22 +697,25 @@ public static class BuildScript
                     continue;
                 }
 
-                if (slot.lipSync.mouthProxy == null)
-                    failures.Add($"{slot.persona} has neither a verified facial rig nor a mouth fallback assigned.");
-                SeatedInterviewerPose seatedPose = slot.avatarRoot.GetComponent<SeatedInterviewerPose>();
-                if (seatedPose == null || !seatedPose.BindRig())
-                    failures.Add($"{slot.persona} is not bound to the professional seated pose.");
-
-                foreach (SkinnedMeshRenderer renderer in slot.avatarRoot.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+                if (avatarRoots.Add(slot.avatarRoot))
                 {
-                    if (renderer.sharedMesh != null && renderer.sharedMesh.blendShapeCount > 0) realVisemeAvatars++;
-                    Debug.Log($"[V-STIPA Avatar Audit] {slot.persona}/{renderer.name}: enabled={renderer.enabled}, " +
-                        $"vertices={renderer.sharedMesh?.vertexCount ?? 0}, bounds={renderer.localBounds}, " +
-                        $"materials={renderer.sharedMaterials.Length}.");
-                    foreach (Material rendererMaterial in renderer.sharedMaterials)
-                        Debug.Log($"[V-STIPA Material Audit] {slot.persona}/{renderer.name}: material={rendererMaterial?.name}, " +
-                            $"shader={rendererMaterial?.shader?.name}, supported={rendererMaterial?.shader?.isSupported}, " +
-                            $"queue={rendererMaterial?.renderQueue}, passes={rendererMaterial?.passCount}.");
+                    if (slot.lipSync.mouthProxy == null)
+                        failures.Add("The male interviewer has neither a verified facial rig nor a mouth fallback assigned.");
+                    SeatedInterviewerPose seatedPose = slot.avatarRoot.GetComponent<SeatedInterviewerPose>();
+                    if (seatedPose == null || !seatedPose.BindRig())
+                        failures.Add("The male interviewer is not bound to the professional seated pose.");
+
+                    foreach (SkinnedMeshRenderer renderer in slot.avatarRoot.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+                    {
+                        if (renderer.sharedMesh != null && renderer.sharedMesh.blendShapeCount > 0) realVisemeAvatars++;
+                        Debug.Log($"[V-STIPA Avatar Audit] male/{renderer.name}: enabled={renderer.enabled}, " +
+                            $"vertices={renderer.sharedMesh?.vertexCount ?? 0}, bounds={renderer.localBounds}, " +
+                            $"materials={renderer.sharedMaterials.Length}.");
+                        foreach (Material rendererMaterial in renderer.sharedMaterials)
+                            Debug.Log($"[V-STIPA Material Audit] male/{renderer.name}: material={rendererMaterial?.name}, " +
+                                $"shader={rendererMaterial?.shader?.name}, supported={rendererMaterial?.shader?.isSupported}, " +
+                                $"queue={rendererMaterial?.renderQueue}, passes={rendererMaterial?.passCount}.");
+                    }
                 }
 
                 string source = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(slot.avatarRoot);
@@ -723,12 +738,30 @@ public static class BuildScript
             }
         }
 
+        if (avatarRoots.Count != 1)
+            failures.Add($"All tone presets must share exactly one male avatar; found {avatarRoots.Count} avatar roots.");
+
         if (failures.Count > 0)
             throw new BuildFailedException("Phase 3 + 4 validation failed:\n- " + string.Join("\n- ", failures));
 
-        Debug.Log($"[V-STIPA Validation] PASS: room/UI, 3 persona configurations, 36 questions, audio references, gestures, and lip-sync fallback are wired. " +
-            $"Capability disclosure: {sourceIds.Count} distinct avatar source file(s); {realVisemeAvatars} avatar instance(s) expose facial blendshapes. " +
-            "The full three-distinct-avatar/real-viseme Phase 3 gate remains pending until suitable exports are supplied.");
+        Debug.Log($"[V-STIPA Validation] PASS: room/UI, one shared male avatar, 3 tone configurations, 36 questions, audio references, gestures, and lip-sync fallback are wired. " +
+            $"Capability disclosure: {sourceIds.Count} distinct avatar source file(s); {realVisemeAvatars} renderer(s) expose facial blendshapes. " +
+            "The real-viseme Phase 3 gate remains pending until a suitable facial-rig export is supplied.");
+    }
+
+    private static void AddWebGlCacheBusting(string output)
+    {
+        string indexPath = Path.Combine(output, "index.html");
+        if (!File.Exists(indexPath))
+            throw new BuildFailedException($"WebGL index was not produced at {indexPath}.");
+
+        string token = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+        string html = File.ReadAllText(indexPath);
+        string[] buildFiles = { "webgl.loader.js", "webgl.data", "webgl.framework.js", "webgl.wasm" };
+        foreach (string buildFile in buildFiles)
+            html = html.Replace($"/{buildFile}\"", $"/{buildFile}?v={token}\"");
+        File.WriteAllText(indexPath, html);
+        Debug.Log($"[BuildScript] Added WebGL build token {token} to prevent mixed cached framework/WASM files.");
     }
 
     [MenuItem("V-STIPA/Build Android")]

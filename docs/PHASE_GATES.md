@@ -26,10 +26,12 @@ Each phase has strict completion criteria. A phase cannot be marked done in `REA
 
 ## Phase 3 — Avatar & Lip-Sync
 - **Verification:**
-  - 3 distinct Avaturn GLB exports are imported with valid Humanoid mappings.
+  - One male interviewer GLB is imported with a valid Humanoid mapping and shared by
+    the warm, neutral, and stern tone presets.
   - uLipSync drives actual facial blendshapes in sync with readable PCM audio.
   - Retargeted gesture clips trigger accurately according to question metadata.
-  - The warm, stern, and neutral personas each pass a full local flow.
+  - The warm, stern, and neutral tones each pass a full local flow with the same male
+    avatar and male voice identity.
   - A separate review pass verifies the gate. A static-face mouth proxy is acceptable
     for the Track 1 fallback, but does not satisfy the final real-viseme criterion.
 

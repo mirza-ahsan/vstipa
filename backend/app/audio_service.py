@@ -7,8 +7,8 @@ import edge_tts
 
 VOICE_SETTINGS = {
     "warm": ("en-US-AndrewNeural", "-5%", "+2Hz"),
-    "neutral": ("en-US-EricNeural", "+0%", "+0Hz"),
-    "stern": ("en-US-ChristopherNeural", "+5%", "-4Hz"),
+    "neutral": ("en-US-AndrewNeural", "+0%", "+0Hz"),
+    "stern": ("en-US-AndrewNeural", "+5%", "-4Hz"),
 }
 
 

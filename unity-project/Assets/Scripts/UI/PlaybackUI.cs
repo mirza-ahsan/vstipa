@@ -194,7 +194,7 @@ public class PlaybackUI : MonoBehaviour
         interviewPanel?.SetActive(false);
         completionPanel?.SetActive(true);
         if (completionSummaryText != null)
-            completionSummaryText.text = $"You completed {playbackController.currentManifest?.total_questions ?? 0} questions with the {playbackController.currentManifest?.persona_name ?? "selected"} persona.";
+            completionSummaryText.text = $"You completed {playbackController.currentManifest?.total_questions ?? 0} questions in the {playbackController.currentManifest?.persona_name ?? "selected"} tone.";
     }
 
     private void HandleStatusChanged(string message)
