@@ -64,7 +64,7 @@ public static class BuildScript
         analyzer.outputSoundGain = 1f;
 
         GameObject avatarStage = new GameObject("AvatarStage");
-        PersonaManager.PersonaSlot warm = CreateInterviewer(avatarStage.transform, audioSource);
+        PersonaManager.PersonaSlot warm = CreateInterviewer(avatarStage.transform, audioSource, camera.transform);
         PersonaManager.PersonaSlot stern = CreateTonePreset(warm, "stern", "Stern & Challenging", Stern, 0f);
         PersonaManager.PersonaSlot neutral = CreateTonePreset(warm, "neutral", "Neutral & Professional", Neutral, 8f);
 
@@ -218,7 +218,8 @@ public static class BuildScript
         // in the flat-screen recording used for the submission.
     }
 
-    private static PersonaManager.PersonaSlot CreateInterviewer(Transform parent, AudioSource audioSource)
+    private static PersonaManager.PersonaSlot CreateInterviewer(
+        Transform parent, AudioSource audioSource, Transform facingTarget)
     {
         GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(AvatarPath);
         GameObject avatar;
@@ -245,6 +246,8 @@ public static class BuildScript
         seatedPose.upperLegPitch = 80f;
         seatedPose.lowerLegPitch = -80f;
         seatedPose.legSpread = 2.5f;
+        seatedPose.facingTarget = facingTarget;
+        seatedPose.FaceTargetImmediately();
 
         HumanoidAvatarConfigurator humanoid = avatar.AddComponent<HumanoidAvatarConfigurator>();
         humanoid.animator = avatar.GetComponentInChildren<Animator>(true);

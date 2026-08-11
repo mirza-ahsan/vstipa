@@ -9,6 +9,11 @@ using UnityEngine;
 [DefaultExecutionOrder(100)]
 public class SeatedInterviewerPose : MonoBehaviour
 {
+    [Header("Audience Facing")]
+    [Tooltip("Usually the active camera. Only horizontal rotation is applied so the seated pose stays level.")]
+    public Transform facingTarget;
+    [Range(15f, 180f)] public float bodyTurnSpeed = 90f;
+
     [Header("Seat Alignment")]
     [Range(55f, 95f)] public float upperLegPitch = 80f;
     [Range(-100f, -45f)] public float lowerLegPitch = -80f;
@@ -31,7 +36,23 @@ public class SeatedInterviewerPose : MonoBehaviour
 
     private void LateUpdate()
     {
+        FaceTargetSmoothly();
         ApplySeatedPose();
+    }
+
+    public void FaceTargetImmediately()
+    {
+        if (!TryGetFacingRotation(out Quaternion targetRotation)) return;
+        transform.rotation = targetRotation;
+    }
+
+    public void FaceTargetSmoothly()
+    {
+        if (!TryGetFacingRotation(out Quaternion targetRotation)) return;
+        transform.rotation = Quaternion.RotateTowards(
+            transform.rotation,
+            targetRotation,
+            Mathf.Max(15f, bodyTurnSpeed) * Time.deltaTime);
     }
 
     public bool BindRig()
@@ -67,6 +88,19 @@ public class SeatedInterviewerPose : MonoBehaviour
         rightUpperLeg.localRotation *= Quaternion.Euler(upperLegPitch, 0f, -legSpread);
         leftLowerLeg.localRotation *= Quaternion.Euler(lowerLegPitch, 0f, 0f);
         rightLowerLeg.localRotation *= Quaternion.Euler(lowerLegPitch, 0f, 0f);
+    }
+
+    private bool TryGetFacingRotation(out Quaternion targetRotation)
+    {
+        targetRotation = transform.rotation;
+        if (facingTarget == null) return false;
+
+        Vector3 horizontalDirection = facingTarget.position - transform.position;
+        horizontalDirection.y = 0f;
+        if (horizontalDirection.sqrMagnitude < 0.0001f) return false;
+
+        targetRotation = Quaternion.LookRotation(horizontalDirection.normalized, Vector3.up);
+        return true;
     }
 
     private Transform FindDescendant(params string[] candidateNames)

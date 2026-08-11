@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -15,6 +16,8 @@ public class QuestionPlaybackController : MonoBehaviour
     public bool enableRoleBasedQuestions = true;
     public string roleInterviewApiUrl = "http://127.0.0.1:8001/api/interviews";
     public int liveRequestTimeoutSeconds = 75;
+    [Tooltip("Downloads and decodes the following question while the current one is speaking.")]
+    public bool prefetchNextQuestionAudio = true;
 
     [Header("Avatar Components")]
     public AvatarGestureController activeAvatarGestureController;
@@ -34,6 +37,9 @@ public class QuestionPlaybackController : MonoBehaviour
 
     private Coroutine manifestLoadCoroutine;
     private Coroutine audioLoadCoroutine;
+    private Coroutine audioPrefetchCoroutine;
+    private readonly Dictionary<string, AudioClip> audioClipCache = new Dictionary<string, AudioClip>();
+    private readonly HashSet<string> audioPrefetchInFlight = new HashSet<string>();
 
     private void Start()
     {
@@ -235,7 +241,14 @@ public class QuestionPlaybackController : MonoBehaviour
             StopCoroutine(audioLoadCoroutine);
             audioLoadCoroutine = null;
         }
+        if (audioPrefetchCoroutine != null)
+        {
+            StopCoroutine(audioPrefetchCoroutine);
+            audioPrefetchCoroutine = null;
+        }
+        audioPrefetchInFlight.Clear();
         if (audioSource != null) audioSource.Stop();
+        ClearAudioCache();
         isPlaying = false;
     }
 
@@ -288,6 +301,63 @@ public class QuestionPlaybackController : MonoBehaviour
         }
         Debug.Log($"[QuestionPlaybackController] Loading spoken voice audio clip from URL: {audioUrl}");
 
+        AudioClip clip = null;
+        if (!audioClipCache.TryGetValue(audioUrl, out clip) && audioPrefetchInFlight.Contains(audioUrl))
+        {
+            float waitStartedAt = Time.realtimeSinceStartup;
+            while (audioPrefetchInFlight.Contains(audioUrl)) yield return null;
+            audioClipCache.TryGetValue(audioUrl, out clip);
+            Debug.Log($"[QuestionPlaybackController] Waited {(Time.realtimeSinceStartup - waitStartedAt) * 1000f:F0} ms for in-flight Q{item.id:D2} prefetch.");
+        }
+
+        if (clip == null)
+        {
+            yield return LoadAudioClipCoroutine(item, audioUrl, loadedClip => clip = loadedClip, "foreground");
+            if (clip != null) audioClipCache[audioUrl] = clip;
+        }
+
+        if (clip != null)
+        {
+            PlayLoadedClip(item, clip);
+            BeginNextAudioPrefetch();
+        }
+
+        isPlaying = false;
+        audioLoadCoroutine = null;
+    }
+
+    private void BeginNextAudioPrefetch()
+    {
+        if (!prefetchNextQuestionAudio || currentManifest?.questions == null) return;
+        int nextIndex = currentQuestionIndex + 1;
+        if (nextIndex < 0 || nextIndex >= currentManifest.questions.Count) return;
+
+        QuestionItemData nextItem = currentManifest.questions[nextIndex];
+        string nextUrl = ResolveAudioUrl(nextItem);
+        if (string.IsNullOrEmpty(nextUrl) || audioClipCache.ContainsKey(nextUrl) || audioPrefetchInFlight.Contains(nextUrl)) return;
+
+        if (audioPrefetchCoroutine != null) StopCoroutine(audioPrefetchCoroutine);
+        audioPrefetchCoroutine = StartCoroutine(PrefetchAudioCoroutine(nextItem, nextUrl));
+    }
+
+    private IEnumerator PrefetchAudioCoroutine(QuestionItemData item, string audioUrl)
+    {
+        audioPrefetchInFlight.Add(audioUrl);
+        AudioClip clip = null;
+        yield return LoadAudioClipCoroutine(item, audioUrl, loadedClip => clip = loadedClip, "prefetch");
+        audioPrefetchInFlight.Remove(audioUrl);
+
+        if (clip != null)
+        {
+            audioClipCache[audioUrl] = clip;
+            Debug.Log($"[QuestionPlaybackController] PREFETCHED SPOKEN VOICE Q{item.id:D2} ({clip.length:F2}s, {clip.frequency} Hz).");
+        }
+        audioPrefetchCoroutine = null;
+    }
+
+    private IEnumerator LoadAudioClipCoroutine(
+        QuestionItemData item, string audioUrl, Action<AudioClip> onLoaded, string requestKind)
+    {
         bool isWav = item.audio_file.EndsWith(".wav", StringComparison.OrdinalIgnoreCase);
         AudioType audioType = item.audio_file.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase) ? AudioType.MPEG : AudioType.WAV;
 
@@ -296,43 +366,48 @@ public class QuestionPlaybackController : MonoBehaviour
             : UnityWebRequestMultimedia.GetAudioClip(audioUrl, audioType))
         {
             yield return www.SendWebRequest();
-
-            if (www.result == UnityWebRequest.Result.Success)
+            if (www.result != UnityWebRequest.Result.Success)
             {
-                // Unity WebGL can expose downloaded MP3/WAV clips as zero-length WebAudio
-                // proxies. Parsing baked PCM WAV bytes ourselves gives uLipSync readable,
-                // deterministic samples on every target.
-                AudioClip clip = isWav
-                    ? WavUtility.ToAudioClip(www.downloadHandler.data, $"{selectedPersona}_q{item.id:D2}")
-                    : DownloadHandlerAudioClip.GetContent(www);
-                if (clip != null)
-                {
-                    if (clip.length <= 0f)
-                    {
-                        Debug.LogWarning($"[QuestionPlaybackController] Downloaded {audioUrl}, but this platform currently reports a zero duration. Attempting playback anyway.");
-                    }
+                Debug.LogError($"[QuestionPlaybackController] Failed to {requestKind} audio from {audioUrl}: {www.error}");
+                onLoaded(null);
+                yield break;
+            }
 
-                    AmplifyAudioClip(clip, audioGainMultiplier);
-                    AudioListener.pause = false;
-                    AudioListener.volume = 1.0f;
-                    audioSource.clip = clip;
-                    audioSource.volume = 1.0f;
-                    audioSource.Play();
-                    Debug.Log($"[QuestionPlaybackController] PLAYING SPOKEN VOICE Q{item.id:D2} SUCCESS (Gain={audioGainMultiplier:F1}x): '{item.question}' ({clip.length:F2}s, {clip.frequency} Hz)");
-                }
-                else
-                {
-                    Debug.LogError($"[QuestionPlaybackController] GetContent returned empty clip for {audioUrl}");
-                }
-            }
-            else
+            // Unity WebGL can expose downloaded MP3/WAV clips as zero-length WebAudio
+            // proxies. Parsing PCM WAV bytes here keeps uLipSync sample access reliable.
+            AudioClip clip = isWav
+                ? WavUtility.ToAudioClip(www.downloadHandler.data, $"{selectedPersona}_q{item.id:D2}")
+                : DownloadHandlerAudioClip.GetContent(www);
+            if (clip == null)
             {
-                Debug.LogError($"[QuestionPlaybackController] Failed to fetch audio WebRequest from {audioUrl}: {www.error}");
+                Debug.LogError($"[QuestionPlaybackController] Decoding returned an empty clip for {audioUrl}");
+                onLoaded(null);
+                yield break;
             }
+
+            if (clip.length <= 0f)
+                Debug.LogWarning($"[QuestionPlaybackController] Downloaded {audioUrl}, but this platform reports zero duration.");
+            AmplifyAudioClip(clip, audioGainMultiplier);
+            onLoaded(clip);
         }
+    }
 
-        isPlaying = false;
-        audioLoadCoroutine = null;
+    private void PlayLoadedClip(QuestionItemData item, AudioClip clip)
+    {
+        AudioListener.pause = false;
+        AudioListener.volume = 1.0f;
+        audioSource.clip = clip;
+        audioSource.volume = 1.0f;
+        audioSource.Play();
+        Debug.Log($"[QuestionPlaybackController] PLAYING SPOKEN VOICE Q{item.id:D2} SUCCESS (Gain={audioGainMultiplier:F1}x): '{item.question}' ({clip.length:F2}s, {clip.frequency} Hz)");
+    }
+
+    private void ClearAudioCache()
+    {
+        foreach (AudioClip clip in audioClipCache.Values)
+            if (clip != null) Destroy(clip);
+        audioClipCache.Clear();
+        if (audioSource != null) audioSource.clip = null;
     }
 
     public string ResolveAudioUrl(QuestionItemData item)

@@ -129,6 +129,16 @@ public class PlaybackControllerTests
     }
 
     [Test]
+    public void TestNextQuestionAudioPrefetchIsEnabled()
+    {
+        GameObject go = new GameObject("TestAudioPrefetch");
+        QuestionPlaybackController controller = go.AddComponent<QuestionPlaybackController>();
+
+        Assert.IsTrue(controller.prefetchNextQuestionAudio);
+        Object.DestroyImmediate(go);
+    }
+
+    [Test]
     public void TestPlaybackUiDebouncesAccidentalDoubleClick()
     {
         GameObject go = new GameObject("TestDoubleClickGuard");
@@ -200,6 +210,29 @@ public class PlaybackControllerTests
         Assert.That(Quaternion.Angle(Quaternion.identity, rightUpperLeg.localRotation), Is.GreaterThan(70f));
         Assert.That(Quaternion.Angle(Quaternion.identity, leftLowerLeg.localRotation), Is.GreaterThan(70f));
         Assert.That(Quaternion.Angle(Quaternion.identity, rightLowerLeg.localRotation), Is.GreaterThan(70f));
+        Object.DestroyImmediate(avatar);
+    }
+
+    [Test]
+    public void TestSeatedInterviewerFacesCameraHorizontally()
+    {
+        GameObject avatar = new GameObject("Avatar");
+        GameObject target = new GameObject("Camera Target");
+        avatar.transform.position = new Vector3(-0.63f, -0.73f, 1.33f);
+        target.transform.position = new Vector3(0f, 1.46f, -2.65f);
+        Transform hips = Child(avatar.transform, "Hips");
+        Child(Child(hips, "LeftUpLeg"), "LeftLeg");
+        Child(Child(hips, "RightUpLeg"), "RightLeg");
+        SeatedInterviewerPose pose = avatar.AddComponent<SeatedInterviewerPose>();
+        pose.facingTarget = target.transform;
+
+        pose.FaceTargetImmediately();
+
+        Vector3 expected = target.transform.position - avatar.transform.position;
+        expected.y = 0f;
+        Assert.That(Vector3.Dot(avatar.transform.forward, expected.normalized), Is.GreaterThan(0.999f));
+        Assert.That(avatar.transform.forward.y, Is.EqualTo(0f).Within(0.0001f));
+        Object.DestroyImmediate(target);
         Object.DestroyImmediate(avatar);
     }
 
