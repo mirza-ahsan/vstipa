@@ -94,11 +94,11 @@ public static class BuildScript
         GameObject go = new GameObject("Main Camera");
         go.tag = "MainCamera";
         Camera camera = go.AddComponent<Camera>();
-        camera.transform.position = new Vector3(0f, 1.5f, -2.55f);
-        camera.transform.LookAt(new Vector3(-0.55f, 1.4f, 1.05f));
-        camera.fieldOfView = 44f;
+        camera.transform.position = new Vector3(0f, 1.46f, -2.65f);
+        camera.transform.LookAt(new Vector3(-0.62f, 1.34f, 1.12f));
+        camera.fieldOfView = 46f;
         camera.clearFlags = CameraClearFlags.SolidColor;
-        camera.backgroundColor = Navy;
+        camera.backgroundColor = Html("#E8E0D3");
         camera.nearClipPlane = 0.05f;
         go.AddComponent<AudioListener>();
 
@@ -121,52 +121,100 @@ public static class BuildScript
         GameObject key = new GameObject("Key Light");
         Light keyLight = key.AddComponent<Light>();
         keyLight.type = LightType.Directional;
-        keyLight.color = new Color(1f, 0.91f, 0.79f);
-        keyLight.intensity = 0.72f;
+        keyLight.color = new Color(1f, 0.94f, 0.84f);
+        keyLight.intensity = 0.92f;
         key.transform.rotation = Quaternion.Euler(42f, -28f, 0f);
 
         GameObject fill = new GameObject("Window Fill");
         Light fillLight = fill.AddComponent<Light>();
         fillLight.type = LightType.Point;
-        fillLight.color = new Color(0.48f, 0.72f, 1f);
-        fillLight.intensity = 1.4f;
-        fillLight.range = 7f;
-        fill.transform.position = new Vector3(-2.2f, 2.3f, 0.6f);
+        fillLight.color = new Color(0.62f, 0.78f, 1f);
+        fillLight.intensity = 1.15f;
+        fillLight.range = 6f;
+        fill.transform.position = new Vector3(-2.4f, 2.5f, 0.2f);
+
+        GameObject practical = new GameObject("Warm Practical Light");
+        Light practicalLight = practical.AddComponent<Light>();
+        practicalLight.type = LightType.Point;
+        practicalLight.color = new Color(1f, 0.67f, 0.38f);
+        practicalLight.intensity = 0.75f;
+        practicalLight.range = 4.5f;
+        practical.transform.position = new Vector3(2.25f, 2.35f, 2.7f);
 
         RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
-        RenderSettings.ambientLight = new Color(0.18f, 0.21f, 0.25f);
+        RenderSettings.ambientLight = new Color(0.38f, 0.36f, 0.33f);
     }
 
     private static void CreateRoom()
     {
-        Material floor = Material("Floor", Html("#25384B"));
-        Material wall = Material("Wall", Html("#304558"));
-        Material wood = Material("Wood", Html("#704B35"));
-        Material darkWood = Material("DarkWood", Html("#3B2A25"));
-        Material green = Material("Plant", Html("#4E8061"));
-        Material frame = Material("Frame", Html("#C7A56A"));
-        Material rug = Material("Rug", Html("#7D4557"));
+        Material floor = Material("Warm Oak Floor", Html("#80634B"));
+        Material wall = Material("Warm Ivory Wall", Html("#E7DFD2"));
+        Material navy = Material("Executive Navy", Html("#17324A"));
+        Material navySoft = Material("Executive Navy Soft", Html("#294A62"));
+        Material oak = Material("Light Oak", Html("#B78355"));
+        Material oakDark = Material("Walnut Trim", Html("#5A3B2B"));
+        Material leather = Material("Chair Leather", Html("#24303B"));
+        Material metal = Material("Brushed Metal", Html("#B8BEC2"));
+        Material green = Material("Plant Green", Html("#3F7658"));
+        Material greenLight = Material("Plant Highlight", Html("#6B9A73"));
+        Material rug = Material("Office Rug", Html("#C9BBA7"));
+        Material window = Material("Window Glass", Html("#789BB3"));
+        Material paper = Material("Certificate Paper", Html("#F7F0E3"));
 
-        Primitive("Floor", PrimitiveType.Cube, new Vector3(0f, -0.08f, 1f), new Vector3(8f, 0.16f, 8f), floor);
-        Primitive("Back Wall", PrimitiveType.Cube, new Vector3(0f, 2.25f, 4f), new Vector3(8f, 4.5f, 0.15f), wall);
-        Primitive("Left Wall", PrimitiveType.Cube, new Vector3(-4f, 2.25f, 1f), new Vector3(0.15f, 4.5f, 6f), wall);
-        Primitive("Rug", PrimitiveType.Cube, new Vector3(0f, 0.015f, 0.75f), new Vector3(4.5f, 0.03f, 3.5f), rug);
+        Primitive("Warm Oak Floor", PrimitiveType.Cube, new Vector3(0f, -0.08f, 1f), new Vector3(8f, 0.16f, 8f), floor);
+        Primitive("Warm Ivory Back Wall", PrimitiveType.Cube, new Vector3(0f, 2.25f, 4f), new Vector3(8f, 4.5f, 0.15f), wall);
+        Primitive("Warm Ivory Left Wall", PrimitiveType.Cube, new Vector3(-4f, 2.25f, 1f), new Vector3(0.15f, 4.5f, 6f), wall);
+        Primitive("Walnut Baseboard", PrimitiveType.Cube, new Vector3(0f, 0.12f, 3.86f), new Vector3(8f, 0.18f, 0.08f), oakDark);
+        Primitive("Office Rug", PrimitiveType.Cube, new Vector3(0f, 0.015f, 0.65f), new Vector3(4.7f, 0.03f, 3.6f), rug);
 
-        GameObject desk = new GameObject("Interview Desk");
-        Primitive("Top", PrimitiveType.Cube, new Vector3(0f, 0.65f, 0.35f), new Vector3(3.0f, 0.1f, 0.82f), wood, desk.transform);
-        Primitive("Front", PrimitiveType.Cube, new Vector3(0f, 0.31f, 0.68f), new Vector3(2.65f, 0.56f, 0.12f), darkWood, desk.transform);
-        Primitive("Leg L", PrimitiveType.Cube, new Vector3(-1.28f, 0.3f, 0.35f), new Vector3(0.12f, 0.6f, 0.62f), darkWood, desk.transform);
-        Primitive("Leg R", PrimitiveType.Cube, new Vector3(1.28f, 0.3f, 0.35f), new Vector3(0.12f, 0.6f, 0.62f), darkWood, desk.transform);
+        // A dark architectural feature wall and oak slats give the interviewer a
+        // deliberate visual frame instead of the old flat grey backdrop.
+        Primitive("Executive Feature Wall", PrimitiveType.Cube, new Vector3(-0.65f, 1.82f, 3.82f),
+            new Vector3(3.5f, 3.25f, 0.07f), navy);
+        for (int i = 0; i < 10; i++)
+        {
+            float x = -2.28f + i * 0.18f;
+            Primitive($"Oak Slat {i + 1:D2}", PrimitiveType.Cube, new Vector3(x, 1.82f, 3.72f),
+                new Vector3(0.055f, 3.05f, 0.055f), oak);
+        }
 
-        Primitive("Artwork 1", PrimitiveType.Cube, new Vector3(-1.25f, 2.35f, 3.88f), new Vector3(1.15f, 0.8f, 0.05f), frame);
-        Primitive("Artwork 2", PrimitiveType.Cube, new Vector3(0.1f, 2.35f, 3.88f), new Vector3(1.15f, 0.8f, 0.05f), Neutral);
-        Primitive("Avatar Contrast Panel", PrimitiveType.Cube, new Vector3(-0.55f, 1.55f, 3.82f),
-            new Vector3(2.2f, 2.85f, 0.06f), Material("AvatarBackdrop", Html("#17293B")));
-        Primitive("Plant Pot", PrimitiveType.Cylinder, new Vector3(2.55f, 0.33f, 2.75f), new Vector3(0.42f, 0.33f, 0.42f), darkWood);
-        Primitive("Plant", PrimitiveType.Sphere, new Vector3(2.55f, 0.98f, 2.75f), new Vector3(0.75f, 1.15f, 0.75f), green);
+        // Window and skyline blocks provide depth and a professional office cue.
+        Primitive("Office Window", PrimitiveType.Cube, new Vector3(2.35f, 2.35f, 3.82f), new Vector3(2.35f, 1.65f, 0.06f), window);
+        Primitive("Window Header", PrimitiveType.Cube, new Vector3(2.35f, 3.22f, 3.72f), new Vector3(2.5f, 0.10f, 0.08f), metal);
+        Primitive("Window Sill", PrimitiveType.Cube, new Vector3(2.35f, 1.48f, 3.72f), new Vector3(2.5f, 0.10f, 0.08f), metal);
+        Primitive("Window Mullion", PrimitiveType.Cube, new Vector3(2.35f, 2.35f, 3.71f), new Vector3(0.07f, 1.65f, 0.08f), metal);
+        Primitive("Skyline 1", PrimitiveType.Cube, new Vector3(1.65f, 1.84f, 3.68f), new Vector3(0.38f, 0.65f, 0.07f), navySoft);
+        Primitive("Skyline 2", PrimitiveType.Cube, new Vector3(2.15f, 1.96f, 3.68f), new Vector3(0.46f, 0.9f, 0.07f), navySoft);
+        Primitive("Skyline 3", PrimitiveType.Cube, new Vector3(2.75f, 1.76f, 3.68f), new Vector3(0.52f, 0.5f, 0.07f), navySoft);
 
-        Primitive("Candidate Chair", PrimitiveType.Cube, new Vector3(0f, 0.52f, -1.65f), new Vector3(0.85f, 0.12f, 0.8f), darkWood);
-        Primitive("Candidate Chair Back", PrimitiveType.Cube, new Vector3(0f, 1.05f, -1.98f), new Vector3(0.85f, 1f, 0.12f), darkWood);
+        // Slim executive desk: no solid front panel, so it no longer hides the avatar.
+        GameObject desk = new GameObject("Slim Executive Interview Desk");
+        Primitive("Oak Desktop", PrimitiveType.Cube, new Vector3(-0.12f, 0.61f, 0.42f), new Vector3(2.65f, 0.09f, 0.66f), oak, desk.transform);
+        Primitive("Left Metal Leg", PrimitiveType.Cube, new Vector3(-1.23f, 0.3f, 0.48f), new Vector3(0.08f, 0.58f, 0.48f), metal, desk.transform);
+        Primitive("Right Metal Leg", PrimitiveType.Cube, new Vector3(0.99f, 0.3f, 0.48f), new Vector3(0.08f, 0.58f, 0.48f), metal, desk.transform);
+        Primitive("Desk Modesty Rail", PrimitiveType.Cube, new Vector3(-0.12f, 0.37f, 0.70f), new Vector3(2.0f, 0.08f, 0.06f), oakDark, desk.transform);
+        Primitive("Desk Pad", PrimitiveType.Cube, new Vector3(-0.55f, 0.665f, 0.36f), new Vector3(0.76f, 0.018f, 0.36f), leather, desk.transform);
+
+        // Proper seated interviewer chair, visible around the avatar's shoulders.
+        GameObject interviewerChair = new GameObject("Interviewer Executive Chair");
+        Primitive("Leather Seat", PrimitiveType.Cube, new Vector3(-0.63f, 0.43f, 1.18f), new Vector3(0.86f, 0.13f, 0.72f), leather, interviewerChair.transform);
+        Primitive("Leather Back", PrimitiveType.Capsule, new Vector3(-0.63f, 1.08f, 1.47f), new Vector3(0.78f, 0.68f, 0.16f), leather, interviewerChair.transform);
+        Primitive("Left Armrest", PrimitiveType.Cube, new Vector3(-1.10f, 0.71f, 1.11f), new Vector3(0.09f, 0.09f, 0.56f), leather, interviewerChair.transform);
+        Primitive("Right Armrest", PrimitiveType.Cube, new Vector3(-0.16f, 0.71f, 1.11f), new Vector3(0.09f, 0.09f, 0.56f), leather, interviewerChair.transform);
+        Primitive("Chair Column", PrimitiveType.Cylinder, new Vector3(-0.63f, 0.22f, 1.18f), new Vector3(0.10f, 0.22f, 0.10f), metal, interviewerChair.transform);
+        Primitive("Chair Base", PrimitiveType.Cylinder, new Vector3(-0.63f, 0.08f, 1.18f), new Vector3(0.42f, 0.035f, 0.42f), metal, interviewerChair.transform);
+
+        // Framed credentials and restrained accessories finish the office set.
+        Primitive("Credential Frame", PrimitiveType.Cube, new Vector3(-3.12f, 2.35f, 3.73f), new Vector3(0.72f, 0.92f, 0.06f), oakDark);
+        Primitive("Credential", PrimitiveType.Cube, new Vector3(-3.12f, 2.35f, 3.65f), new Vector3(0.59f, 0.78f, 0.035f), paper);
+        Primitive("Credential Seal", PrimitiveType.Cylinder, new Vector3(-3.12f, 2.18f, 3.60f), new Vector3(0.09f, 0.018f, 0.09f), Warm);
+        Primitive("Plant Pot", PrimitiveType.Cylinder, new Vector3(2.85f, 0.34f, 2.85f), new Vector3(0.38f, 0.34f, 0.38f), oakDark);
+        Primitive("Plant Crown", PrimitiveType.Sphere, new Vector3(2.85f, 1.05f, 2.85f), new Vector3(0.70f, 1.08f, 0.70f), green);
+        Primitive("Plant Highlight", PrimitiveType.Sphere, new Vector3(2.58f, 1.13f, 2.73f), new Vector3(0.38f, 0.72f, 0.38f), greenLight);
+
+        // The candidate's chair is intentionally outside this camera composition.
+        // A foreground chair back obscures the desk and reads as a large dark blob
+        // in the flat-screen recording used for the submission.
     }
 
     private static PersonaManager.PersonaSlot CreatePersona(
@@ -186,9 +234,9 @@ public static class BuildScript
         }
 
         avatar.name = $"{displayName} Avatar (T1 Fallback)";
-        // Raise the standing T1 model into a seated-interviewer composition so the
-        // face and shoulders remain readable above the desk.
-        avatar.transform.position = new Vector3(-0.65f, 0.05f, 1.05f);
+        // Lower the standing fallback into the executive chair so it reads as a
+        // seated interviewer while preserving the native rig and idle animation.
+        avatar.transform.position = new Vector3(-0.63f, -0.48f, 1.10f);
         avatar.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
         avatar.transform.localScale = Vector3.one * 1.35f;
 
@@ -460,8 +508,8 @@ public static class BuildScript
     [MenuItem("V-STIPA/Build WebGL")]
     public static void BuildWebGL()
     {
-        SetupMainScene();
         EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.WebGL, BuildTarget.WebGL);
+        SetupMainScene();
         PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Disabled;
 
         string output = GetCommandLineValue("-vstipaOutput") ??
@@ -497,7 +545,8 @@ public static class BuildScript
         if (ui == null || ui.startPanel == null || ui.interviewPanel == null || ui.completionPanel == null ||
             ui.warmButton == null || ui.neutralButton == null || ui.sternButton == null)
             failures.Add("Persona selection, interview, or completion UI references are incomplete.");
-        if (GameObject.Find("Interview Desk") == null || Camera.main == null)
+        if (GameObject.Find("Slim Executive Interview Desk") == null ||
+            GameObject.Find("Interviewer Executive Chair") == null || Camera.main == null)
             failures.Add("Interview room or main camera is missing.");
 
         int realVisemeAvatars = 0;
