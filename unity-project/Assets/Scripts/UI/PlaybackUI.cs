@@ -117,7 +117,7 @@ public class PlaybackUI : MonoBehaviour
         startPanel?.SetActive(true);
         interviewPanel?.SetActive(false);
         completionPanel?.SetActive(false);
-        if (startStatusText != null) startStatusText.text = "Enter a target role, then choose an interviewer style.";
+        if (startStatusText != null) startStatusText.text = "READY  •  ENTER A ROLE TO BEGIN";
     }
 
     public void RestartInterview()

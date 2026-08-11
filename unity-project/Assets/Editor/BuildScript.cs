@@ -19,6 +19,7 @@ public static class BuildScript
 {
     private const string ScenePath = "Assets/Scenes/MainScene.unity";
     private const string AvatarPath = "Assets/Avatars/male_avatar.glb";
+    private const string HomeHeroPath = "Assets/UI/VSTIPA_Home_Hero.png";
     private const string MaterialDirectory = "Assets/Generated/Materials";
     private const string XrSettingsDirectory = "Assets/XR/Settings";
     private const string XrGeneralSettingsPath = XrSettingsDirectory + "/XRGeneralSettingsPerBuildTarget.asset";
@@ -311,41 +312,94 @@ public static class BuildScript
             new Vector2(0.035f, 0.925f), new Vector2(0.52f, 0.985f));
         brand.fontStyle = FontStyle.Bold;
 
-        GameObject start = UIPanel("Persona Selection", canvasGo.transform, new Color(Navy.r, Navy.g, Navy.b, 0.92f), Vector2.zero, Vector2.one);
-        GameObject startCard = UIPanel("Selection Card", start.transform, new Color(Panel.r, Panel.g, Panel.b, 0.98f),
-            new Vector2(0.18f, 0.16f), new Vector2(0.82f, 0.86f));
-        Text title = UIText("Title", startCard.transform, font, "Choose your interviewer", 48, Cream, TextAnchor.MiddleCenter,
-            new Vector2(0.08f, 0.79f), new Vector2(0.92f, 0.93f));
+        GameObject start = UIPanel("V-STIPA Home Screen", canvasGo.transform, Navy, Vector2.zero, Vector2.one);
+        Texture2D homeHero = AssetDatabase.LoadAssetAtPath<Texture2D>(HomeHeroPath);
+        if (homeHero != null)
+        {
+            RawImage hero = UIRawImage("Professional Interview Hero", start.transform, homeHero, Color.white,
+                Vector2.zero, Vector2.one);
+            // Crop the source's 3:2 frame to a 16:9 canvas without stretching it.
+            hero.uvRect = new Rect(0f, 0.078125f, 1f, 0.84375f);
+        }
+        else
+        {
+            Debug.LogError($"[BuildScript] Missing home-screen artwork at {HomeHeroPath}.");
+        }
+
+        // Layered translucent shapes preserve contrast in a headset while allowing
+        // the generated office artwork to provide depth and a premium first frame.
+        UIPanel("Full Screen Tint", start.transform, new Color(Navy.r, Navy.g, Navy.b, 0.20f),
+            Vector2.zero, Vector2.one).GetComponent<Image>().raycastTarget = false;
+        UIPanel("Left Content Shade", start.transform, new Color(Navy.r, Navy.g, Navy.b, 0.90f),
+            Vector2.zero, new Vector2(0.57f, 1f)).GetComponent<Image>().raycastTarget = false;
+        UIPanel("Warm Accent Rail", start.transform, Warm,
+            new Vector2(0.045f, 0.07f), new Vector2(0.049f, 0.93f)).GetComponent<Image>().raycastTarget = false;
+
+        GameObject startCard = new GameObject("Home Content", typeof(RectTransform));
+        startCard.transform.SetParent(start.transform, false);
+        Stretch(startCard.GetComponent<RectTransform>(), new Vector2(0.065f, 0.065f), new Vector2(0.535f, 0.94f));
+
+        Text homeBrand = UIText("Home Brand", startCard.transform, font, "V-STIPA", 34, Cream,
+            TextAnchor.MiddleLeft, new Vector2(0f, 0.90f), new Vector2(0.34f, 0.98f));
+        homeBrand.fontStyle = FontStyle.Bold;
+        UIText("Brand Expansion", startCard.transform, font,
+            "VIRTUAL SYNTHETIC TRAINER  /  INTERVIEW PERFORMANCE & ANALYSIS", 15, Neutral,
+            TextAnchor.MiddleLeft, new Vector2(0.22f, 0.90f), new Vector2(1f, 0.98f));
+
+        UIText("Hero Eyebrow", startCard.transform, font, "IMMERSIVE AI INTERVIEW PRACTICE", 18, Warm,
+            TextAnchor.MiddleLeft, new Vector2(0f, 0.79f), new Vector2(1f, 0.85f));
+        Text title = UIText("Title", startCard.transform, font, "PRACTISE WITH PURPOSE.\nINTERVIEW WITH CONFIDENCE.",
+            45, Cream, TextAnchor.MiddleLeft, new Vector2(0f, 0.61f), new Vector2(1f, 0.80f));
         title.fontStyle = FontStyle.Bold;
         UIText("Subtitle", startCard.transform, font,
-            "Enter the position you are preparing for. AI creates a tailored 12-question interview.", 23, Muted, TextAnchor.MiddleCenter,
-            new Vector2(0.1f, 0.68f), new Vector2(0.9f, 0.79f));
+            "Choose a target role and interviewer style. V-STIPA builds a focused 12-question rehearsal around your goal.",
+            21, Muted, TextAnchor.MiddleLeft, new Vector2(0f, 0.51f), new Vector2(0.94f, 0.62f));
 
-        Text roleLabel = UIText("Role Label", startCard.transform, font, "TARGET ROLE OR POSITION", 18, Cream, TextAnchor.MiddleLeft,
-            new Vector2(0.08f, 0.59f), new Vector2(0.92f, 0.67f));
+        UIFeatureBadge("Role Badge", startCard.transform, font, "ROLE-SPECIFIC", Neutral,
+            new Vector2(0f, 0.455f), new Vector2(0.29f, 0.505f));
+        UIFeatureBadge("Voice Badge", startCard.transform, font, "MALE VOICE", Warm,
+            new Vector2(0.305f, 0.455f), new Vector2(0.55f, 0.505f));
+        UIFeatureBadge("Avatar Badge", startCard.transform, font, "AVATAR-LED", Stern,
+            new Vector2(0.565f, 0.455f), new Vector2(0.82f, 0.505f));
+
+        Text roleLabel = UIText("Role Label", startCard.transform, font, "WHAT ROLE ARE YOU PREPARING FOR?", 17,
+            Cream, TextAnchor.MiddleLeft, new Vector2(0f, 0.385f), new Vector2(1f, 0.445f));
         roleLabel.fontStyle = FontStyle.Bold;
         InputField roleInput = UIInputField("Target Role", startCard.transform, font, "Software Engineer",
             "e.g. Backend Engineer, Product Designer, Data Analyst",
-            new Vector2(0.08f, 0.49f), new Vector2(0.92f, 0.60f));
+            new Vector2(0f, 0.315f), new Vector2(0.94f, 0.385f));
 
-        Button warmButton = UIButton("Warm Persona", startCard.transform, font, "1  WARM & ENCOURAGING\nSupportive prompts and reassuring pacing", Warm,
-            new Vector2(0.08f, 0.28f), new Vector2(0.36f, 0.46f));
-        Button neutralButton = UIButton("Neutral Persona", startCard.transform, font, "2  NEUTRAL & PROFESSIONAL\nMeasured prompts and balanced pacing", Neutral,
-            new Vector2(0.36f, 0.28f), new Vector2(0.64f, 0.46f));
-        Button sternButton = UIButton("Stern Persona", startCard.transform, font, "3  STERN & CHALLENGING\nDirect prompts and firmer delivery", Stern,
-            new Vector2(0.64f, 0.28f), new Vector2(0.92f, 0.46f));
+        UIText("Persona Prompt", startCard.transform, font, "CHOOSE YOUR INTERVIEWER", 17, Cream,
+            TextAnchor.MiddleLeft, new Vector2(0f, 0.255f), new Vector2(1f, 0.31f));
+        Button warmButton = UIButton("Warm Persona", startCard.transform, font,
+            "1  WARM\nEncouraging", Warm, new Vector2(0f, 0.16f), new Vector2(0.30f, 0.255f));
+        Button neutralButton = UIButton("Neutral Persona", startCard.transform, font,
+            "2  NEUTRAL\nProfessional", Neutral, new Vector2(0.32f, 0.16f), new Vector2(0.62f, 0.255f));
+        Button sternButton = UIButton("Stern Persona", startCard.transform, font,
+            "3  STERN\nChallenging", Stern, new Vector2(0.64f, 0.16f), new Vector2(0.94f, 0.255f));
         string controlsHint = EditorUserBuildSettings.activeBuildTarget == BuildTarget.Android
             ? "QUEST CONTROLS  •  A / trigger: Warm  •  B: Neutral  •  X or Y: Stern"
-            : "Click a persona or press 1, 2, or 3  •  Headphones recommended";
-        UIText("Controls Hint", startCard.transform, font, controlsHint, 20, Muted,
-            TextAnchor.MiddleCenter, new Vector2(0.08f, 0.18f), new Vector2(0.92f, 0.27f));
+            : "SELECT A STYLE OR PRESS 1, 2, OR 3  •  HEADPHONES RECOMMENDED";
+        UIText("Controls Hint", startCard.transform, font, controlsHint, 15, Muted,
+            TextAnchor.MiddleLeft, new Vector2(0f, 0.105f), new Vector2(0.94f, 0.15f));
         Text startStatus = UIText("Generation Status", startCard.transform, font,
-            "Enter a target role, then choose an interviewer style.", 18, Warm, TextAnchor.MiddleCenter,
-            new Vector2(0.08f, 0.10f), new Vector2(0.92f, 0.18f));
+            "READY  •  ENTER A ROLE TO BEGIN", 16, Warm, TextAnchor.MiddleLeft,
+            new Vector2(0f, 0.052f), new Vector2(0.94f, 0.105f));
         UIText("Fallback Notice", startCard.transform, font,
-            "Live AI uses the local backend. If it is unavailable, the app automatically uses the baked interview fallback.",
-            16, new Color(Muted.r, Muted.g, Muted.b, 0.78f), TextAnchor.MiddleCenter,
-            new Vector2(0.1f, 0.03f), new Vector2(0.9f, 0.10f));
+            "Secure local backend  •  Reliable baked fallback when live generation is unavailable",
+            13, new Color(Muted.r, Muted.g, Muted.b, 0.74f), TextAnchor.MiddleLeft,
+            new Vector2(0f, 0f), new Vector2(0.94f, 0.05f));
+
+        GameObject heroCallout = UIPanel("Hero Callout", start.transform,
+            new Color(Panel.r, Panel.g, Panel.b, 0.88f), new Vector2(0.69f, 0.095f), new Vector2(0.94f, 0.245f));
+        UIPanel("Callout Accent", heroCallout.transform, Neutral,
+            new Vector2(0f, 0f), new Vector2(0.018f, 1f)).GetComponent<Image>().raycastTarget = false;
+        Text calloutTitle = UIText("Callout Title", heroCallout.transform, font, "A BETTER WAY TO REHEARSE", 19,
+            Cream, TextAnchor.MiddleLeft, new Vector2(0.09f, 0.55f), new Vector2(0.93f, 0.88f));
+        calloutTitle.fontStyle = FontStyle.Bold;
+        UIText("Callout Detail", heroCallout.transform, font,
+            "12 tailored questions  •  3 interviewer styles\nVoice, avatar, and focused practice in one session",
+            16, Muted, TextAnchor.MiddleLeft, new Vector2(0.09f, 0.15f), new Vector2(0.93f, 0.57f));
 
         GameObject interview = new GameObject("Interview HUD", typeof(RectTransform));
         interview.transform.SetParent(canvasGo.transform, false);
@@ -418,6 +472,31 @@ public static class BuildScript
         go.GetComponent<Image>().color = color;
         Stretch(go.GetComponent<RectTransform>(), min, max);
         return go;
+    }
+
+    private static RawImage UIRawImage(string name, Transform parent, Texture texture, Color color,
+        Vector2 min, Vector2 max)
+    {
+        GameObject go = new GameObject(name, typeof(RectTransform), typeof(RawImage));
+        go.transform.SetParent(parent, false);
+        RawImage image = go.GetComponent<RawImage>();
+        image.texture = texture;
+        image.color = color;
+        image.raycastTarget = false;
+        Stretch(go.GetComponent<RectTransform>(), min, max);
+        return image;
+    }
+
+    private static void UIFeatureBadge(string name, Transform parent, Font font, string label, Color accent,
+        Vector2 min, Vector2 max)
+    {
+        GameObject badge = UIPanel(name, parent, new Color(Panel.r, Panel.g, Panel.b, 0.94f), min, max);
+        badge.GetComponent<Image>().raycastTarget = false;
+        UIPanel("Accent", badge.transform, accent, new Vector2(0f, 0f), new Vector2(0.025f, 1f))
+            .GetComponent<Image>().raycastTarget = false;
+        Text text = UIText("Label", badge.transform, font, label, 14, Cream, TextAnchor.MiddleCenter,
+            new Vector2(0.08f, 0.08f), new Vector2(0.96f, 0.92f));
+        text.fontStyle = FontStyle.Bold;
     }
 
     private static Text UIText(string name, Transform parent, Font font, string value, int size, Color color,
@@ -583,6 +662,10 @@ public static class BuildScript
         if (GameObject.Find("Slim Executive Interview Desk") == null ||
             GameObject.Find("Interviewer Executive Chair") == null || Camera.main == null)
             failures.Add("Interview room or main camera is missing.");
+        if (GameObject.Find("V-STIPA Home Screen") == null || GameObject.Find("Home Brand") == null ||
+            GameObject.Find("Professional Interview Hero") == null ||
+            AssetDatabase.LoadAssetAtPath<Texture2D>(HomeHeroPath) == null)
+            failures.Add("The branded home screen or its professional hero artwork is missing.");
 
         int realVisemeAvatars = 0;
         var sourceIds = new HashSet<string>();
